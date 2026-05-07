@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.psspl.autoreply.ui.screens.dashboard.DashboardScreen
+import com.psspl.autoreply.ui.screens.menu.MenuScreen
 import com.psspl.autoreply.ui.screens.rules.RulesScreen
 import com.psspl.autoreply.ui.screens.settings.SettingsScreen
 import com.psspl.autoreply.ui.screens.supportedapps.SupportedAppsScreen
@@ -22,6 +23,9 @@ fun AppNavGraph(
     ) {
         composable(BottomNavItem.Dashboard.route) {
             DashboardScreen()
+        }
+        composable(BottomNavItem.Menu.route) {
+            MenuScreen()
         }
         composable(BottomNavItem.Rules.route) {
             RulesScreen()

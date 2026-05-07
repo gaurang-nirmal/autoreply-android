@@ -1,9 +1,10 @@
 package com.psspl.autoreply.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -18,6 +19,13 @@ sealed class BottomNavItem(
         icon = Icons.Filled.Home,
     )
 
+    // Menu sits immediately next to Dashboard (bottom-left)
+    data object Menu : BottomNavItem(
+        route = "menu",
+        label = "Menu",
+        icon = Icons.Filled.Apps,
+    )
+
     data object Rules : BottomNavItem(
         route = "rules",
         label = "Rules",
@@ -27,7 +35,7 @@ sealed class BottomNavItem(
     data object SupportedApps : BottomNavItem(
         route = "supported_apps",
         label = "Apps",
-        icon = Icons.Filled.Menu,
+        icon = Icons.Filled.PhoneAndroid,   // changed from hamburger → phone icon
     )
 
     data object Settings : BottomNavItem(
@@ -37,6 +45,6 @@ sealed class BottomNavItem(
     )
 
     companion object {
-        val items = listOf(Dashboard, Rules, SupportedApps, Settings)
+        val items = listOf(Dashboard, Menu, Rules, SupportedApps, Settings)
     }
 }
