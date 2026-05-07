@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew dependencies *)",
+      "WebSearch",
+      "Bash(./gradlew help *)",
+      "Read(//d/C Drive 2/AndroidApps/AndroidDemos/2026/AutoReply-Android/**)",
+      "Bash(./gradlew assembleDebug)"
+    ]
+  }
+}
