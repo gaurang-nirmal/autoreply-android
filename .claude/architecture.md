@@ -97,3 +97,13 @@ API Structure:
 - /subscriptions
 - /supported-apps
 - /users
+
+
+Reply Execution Flow:
+
+Incoming Notification
+→ Detect Source Application
+→ Check Notification Reply Support
+→ Try RemoteInput Reply
+→ If Failed:
+    → Trigger Accessibility Automation

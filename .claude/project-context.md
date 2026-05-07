@@ -68,3 +68,17 @@ Non-MVP Features:
 - Cloud backup
 - Advanced analytics
 - Smart reply suggestions
+
+Reply Strategy:
+
+Preferred Reply Flow:
+1. Use notification direct reply (RemoteInput) whenever supported
+2. Fallback to Accessibility Service automation if direct reply is unavailable or fails
+
+Reason:
+- Direct notification reply is faster and less intrusive
+- Accessibility automation is required for unsupported apps or advanced flows
+
+Important:
+- Support varies by application and Android version
+- Accessibility fallback must remain reliable
