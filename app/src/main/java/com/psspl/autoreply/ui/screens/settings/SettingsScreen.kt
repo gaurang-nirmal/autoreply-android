@@ -3,13 +3,16 @@ package com.psspl.autoreply.ui.screens.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -20,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.psspl.autoreply.ui.components.AppCard
 import com.psspl.autoreply.ui.components.AppTopBar
+import com.psspl.autoreply.ui.components.SecondaryButton
 import com.psspl.autoreply.ui.theme.AutoReplyTheme
 import com.psspl.autoreply.ui.theme.Spacing
 
@@ -31,7 +35,10 @@ private val settingsItems = listOf(
 )
 
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    onSignOut: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         topBar = { AppTopBar(title = "Settings") },
         modifier = modifier,
@@ -63,6 +70,18 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                         )
                     }
                 }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(Spacing.lg))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(modifier = Modifier.height(Spacing.lg))
+
+                // Sign-out button — triggers AuthViewModel.signOut() via the callback.
+                SecondaryButton(
+                    text = "Sign Out",
+                    onClick = onSignOut,
+                )
             }
         }
     }

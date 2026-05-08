@@ -14,6 +14,7 @@ import com.psspl.autoreply.ui.screens.supportedapps.SupportedAppsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
+    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -34,7 +35,7 @@ fun AppNavGraph(
             SupportedAppsScreen()
         }
         composable(BottomNavItem.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(onSignOut = onSignOut)
         }
     }
 }

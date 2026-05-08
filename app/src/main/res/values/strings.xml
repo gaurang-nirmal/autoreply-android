@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">AutoReply</string>
+    <!--
+        PLACEHOLDER — replaced automatically by the google-services plugin once
+        google-services.json is added to app/.
+        The real value comes from the oauth_client with type=3 (Web client) inside
+        google-services.json. Do NOT commit the real ID here.
+    -->
+    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID_PLACEHOLDER</string>
 </resources>

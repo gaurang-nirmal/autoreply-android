@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -72,6 +73,21 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+
+    // Firebase (BOM manages all Firebase versions)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+
+    // Google Identity / Credential Manager
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
+
+    // Coroutines Play Services (Task.await() extension)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // DataStore Preferences (session persistence)
+    implementation(libs.datastore.preferences)
 
     // Test
     testImplementation(libs.junit)
