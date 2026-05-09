@@ -8,22 +8,18 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialUnsupportedException
 import androidx.credentials.exceptions.NoCredentialException
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.psspl.autoreply.R
+import com.psspl.autoreplyclone.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Exception thrown when Google Play Services is missing, disabled, or too old
- * to support the Credential Manager API.
- *
- * @param statusCode The raw [ConnectionResult] status code for diagnostics.
+ * Thrown when Google Play Services is unavailable or too old to support the
+ * Credential Manager provider (requires Play Services 23.x+).
  */
-class PlayServicesUnavailableException(val statusCode: Int, message: String) : Exception(message)
+class PlayServicesUnavailableException(message: String) : Exception(message)
 
 /**
  * Wraps the Credential Manager API to retrieve a Google ID token.
@@ -58,11 +54,7 @@ class GoogleCredentialProvider @Inject constructor(
      * @return [Result.success] with the raw ID token string, or [Result.failure].
      */
     suspend fun getGoogleIdToken(activityContext: Context): Result<String> {
-        // ── Guard: Play Services must be available and up-to-date ─────────
-        val playServicesCheck = checkPlayServices()
-        if (playServicesCheck.isFailure) return playServicesCheck.map { "" }
-
-        // ── Phase 1: silent / single-tap sign-in ─────────────────────────
+        // ── Phase 1: silent / zero-tap sign-in ───────────────────────────
         val silentResult = fetchToken(
             activityContext = activityContext,
             filterByAuthorizedAccounts = true,
@@ -81,42 +73,7 @@ class GoogleCredentialProvider @Inject constructor(
         )
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────
-
-    /**
-     * Returns [Result.success] when Google Play Services is available and
-     * at a sufficient version, or [Result.failure] with a
-     * [PlayServicesUnavailableException] otherwise.
-     */
-    private fun checkPlayServices(): Result<Unit> {
-        val statusCode = GoogleApiAvailability.getInstance()
-            .isGooglePlayServicesAvailable(appContext)
-
-        if (statusCode == ConnectionResult.SUCCESS) return Result.success(Unit)
-
-        val message = when (statusCode) {
-            ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED ->
-                "Google Play Services needs to be updated. " +
-                        "Please update it from the Play Store and try again."
-
-            ConnectionResult.SERVICE_MISSING ->
-                "Google Play Services is not installed on this device. " +
-                        "Google Sign-In is unavailable."
-
-            ConnectionResult.SERVICE_DISABLED ->
-                "Google Play Services is disabled. " +
-                        "Please enable it in device settings and try again."
-
-            ConnectionResult.SERVICE_INVALID ->
-                "Google Play Services installation is corrupted. " +
-                        "Please reinstall it from the Play Store."
-
-            else ->
-                "Google Play Services is not available on this device " +
-                        "(status code: $statusCode)."
-        }
-        return Result.failure(PlayServicesUnavailableException(statusCode, message))
-    }
+    // ── Private ───────────────────────────────────────────────────────────
 
     private suspend fun fetchToken(
         activityContext: Context,
@@ -158,9 +115,8 @@ class GoogleCredentialProvider @Inject constructor(
             // guard check (race condition or custom ROM).
             Result.failure(
                 PlayServicesUnavailableException(
-                    statusCode = ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED,
-                    message = "Google Sign-In provider is unavailable on this device. " +
-                            "Please update Google Play Services from the Play Store.",
+                    "Google Sign-In provider is unavailable on this device. " +
+                    "Please update Google Play Services from the Play Store.",
                 )
             )
         } catch (e: GetCredentialException) {

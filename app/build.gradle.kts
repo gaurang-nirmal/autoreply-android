@@ -3,17 +3,16 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.google.services)
 }
 
 android {
-    namespace = "com.psspl.autoreply"
+    namespace = "com.psspl.autoreplyclone"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.psspl.autoreply"
+        applicationId = "com.psspl.autoreplyclone"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -37,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true   // enables BuildConfig.DEBUG for network logging
     }
 }
 
@@ -74,20 +74,18 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    // Firebase (BOM manages all Firebase versions)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-
-    // Google Identity / Credential Manager
+    // Google Identity / Credential Manager (no Firebase)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    // Coroutines Play Services (Task.await() extension)
-    implementation(libs.kotlinx.coroutines.play.services)
-
-    // DataStore Preferences (session persistence)
+    // DataStore Preferences (JWT session persistence)
     implementation(libs.datastore.preferences)
+
+    // Networking — Retrofit + OkHttp + Gson
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging)
 
     // Test
     testImplementation(libs.junit)

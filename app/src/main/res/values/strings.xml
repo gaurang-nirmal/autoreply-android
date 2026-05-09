@@ -1,10 +1,19 @@
 <resources>
     <string name="app_name">AutoReply</string>
     <!--
-        PLACEHOLDER — replaced automatically by the google-services plugin once
-        google-services.json is added to app/.
-        The real value comes from the oauth_client with type=3 (Web client) inside
-        google-services.json. Do NOT commit the real ID here.
+        Google OAuth 2.0 Web Client ID — required by Credential Manager (GIS).
+
+        HOW TO GET THIS:
+        1. Go to Google Cloud Console → APIs & Services → Credentials
+        2. Find the OAuth 2.0 client with Type = "Web application"
+           (named "Web client (auto created by Google Service)" or similar)
+        3. Click it → copy the Client ID value
+        4. Paste it here, replacing the placeholder below.
+
+        NOTE: This is NOT the Android client ID.
+              Use the Web application client ID as the serverClientId.
     -->
-    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID_PLACEHOLDER</string>
+<!--    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>-->
+    <string name="default_web_client_id">497483512040-mva81kr3ipm7nmrlm1gqvd5141db0t8r.apps.googleusercontent.com</string>
+
 </resources>

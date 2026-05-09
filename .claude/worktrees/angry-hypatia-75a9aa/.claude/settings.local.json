@@ -6,7 +6,17 @@
       "Bash(./gradlew help *)",
       "Read(//d/C Drive 2/AndroidApps/AndroidDemos/2026/AutoReply-Android/**)",
       "Bash(./gradlew assembleDebug)",
-      "Bash(./gradlew assembleDebug --stacktrace)"
+      "Bash(./gradlew assembleDebug --stacktrace)",
+      "Bash(Get-ChildItem -Path \"D:\\\\C Drive 2\\\\BackEndApps\\\\node_projects\\\\auto-reply-backend\\\\backend\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\C Drive 2\\\\BackEndApps\\\\node_projects\\\\auto-reply-backend\\\\backend\" -Recurse -Force | Select-Object FullName | Sort-Object FullName | ForEach-Object { $_.FullName })",
+      "Bash(npx prisma *)",
+      "Bash(set \"PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=yes, proceed\")",
+      "Bash(findstr /i \"chatbot_config\\\\|ai_config\\\\|webhook_config\\\\|contact_interaction\\\\|messages\" \"D:\\\\C Drive 2\\\\BackEndApps\\\\node_projects\\\\auto-reply-backend\\\\backend\\\\prisma\\\\migrations\\\\20260507124914_add_messages_contact_interactions\\\\migration.sql\")",
+      "PowerShell(Invoke-RestMethod -Method POST -Uri \"http://localhost:3000/auth/google\" -ContentType \"application/json\" -Body '{\"idToken\": \"invalid_token_for_smoke_test\"}' -ErrorAction SilentlyContinue)",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -First 1; if \\($proc\\) { Stop-Process -Id $proc -Force; Write-Host \"Killed PID $proc\" } else { Write-Host \"Nothing on port 3000\" })"
     ]
   }
 }

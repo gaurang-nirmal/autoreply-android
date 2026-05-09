@@ -2,42 +2,49 @@ package com.psspl.autoreply.data.auth
 
 import android.content.Context
 import androidx.credentials.exceptions.GetCredentialCancellationException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.GoogleAuthProvider
 import com.psspl.autoreply.data.auth.model.AuthResult
 import com.psspl.autoreply.data.auth.model.AuthUser
 import com.psspl.autoreply.data.local.SessionManager
-import kotlinx.coroutines.channels.awaitClose
+import com.psspl.autoreply.data.remote.AuthApiService
+import com.psspl.autoreply.data.remote.model.GoogleAuthRequest
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Production implementation of [AuthRepository].
+ *
+ * ## Sign-in flow
+ * 1. Credential Manager retrieves a Google ID token via GIS (no Firebase).
+ * 2. ID token is sent to the backend POST /auth/google.
+ * 3. Backend validates with Google's public keys and returns an app JWT.
+ * 4. JWT + user profile are persisted in [SessionManager] (DataStore).
+ * 5. [currentUser] flow emits — driving the UI to the authenticated state.
+ *
+ * ## Session restore
+ * On cold start the [currentUser] flow reads from DataStore.  If a JWT
+ * is present the user is considered authenticated without any network call.
+ *
+ * ## Security
+ * - The Google ID token is used exactly once (to exchange for a JWT) and
+ *   is never stored locally.
+ * - Only the app-issued JWT is persisted.
+ */
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
-    private val firebaseAuth: FirebaseAuth,
     private val googleCredentialProvider: GoogleCredentialProvider,
+    private val authApiService: AuthApiService,
     private val sessionManager: SessionManager,
 ) : AuthRepository {
 
-    /**
-     * Emits the current [AuthUser] whenever Firebase auth state changes.
-     * Emits null when the user is signed out. The first emission happens
-     * immediately on collection (Firebase calls the listener synchronously
-     * upon registration if a current user already exists).
-     */
-    override val currentUser: Flow<AuthUser?> = callbackFlow {
-        val listener = FirebaseAuth.AuthStateListener { auth ->
-            trySend(auth.currentUser?.toAuthUser())
-        }
-        firebaseAuth.addAuthStateListener(listener)
-        awaitClose { firebaseAuth.removeAuthStateListener(listener) }
-    }
+    /** Backed by DataStore — emits the cached [AuthUser] while a JWT is stored. */
+    override val currentUser: Flow<AuthUser?> = sessionManager.currentUser
 
     override suspend fun signInWithGoogle(activityContext: Context): AuthResult {
         return try {
+            // ── Step 1: Google ID token via Credential Manager ────────────
             val tokenResult = googleCredentialProvider.getGoogleIdToken(activityContext)
 
             if (tokenResult.isFailure) {
@@ -55,46 +62,46 @@ class AuthRepositoryImpl @Inject constructor(
                     else ->
                         AuthResult.Error(
                             message = exception?.message
-                                ?: "Failed to retrieve Google credential",
+                                ?: "Failed to retrieve Google credential.",
                             cause = exception,
                         )
                 }
             }
 
             val idToken = tokenResult.getOrThrow()
-            val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
-            val authResult = firebaseAuth.signInWithCredential(firebaseCredential).await()
 
-            val firebaseUser = authResult.user
-                ?: return AuthResult.Error("Firebase returned no user after sign-in")
-
-            sessionManager.saveSession(
-                uid = firebaseUser.uid,
-                displayName = firebaseUser.displayName,
-                email = firebaseUser.email,
-                photoUrl = firebaseUser.photoUrl?.toString(),
+            // ── Step 2: Exchange ID token for app JWT via backend ─────────
+            val response = authApiService.authenticateWithGoogle(
+                GoogleAuthRequest(idToken = idToken),
             )
 
-            AuthResult.Success(firebaseUser.toAuthUser(idToken = idToken))
+            // ── Step 3: Persist JWT + user profile (NOT the Google token) ─
+            val user = response.user.toAuthUser()
+            sessionManager.saveAuthData(jwt = response.accessToken, user = user)
+
+            AuthResult.Success(user)
+
+        } catch (e: HttpException) {
+            val message = when (e.code()) {
+                401  -> "Authentication rejected by server. Please try again."
+                403  -> "Access denied. Contact support if this persists."
+                500  -> "Server error. Please try again later."
+                else -> "Sign-in failed (HTTP ${e.code()}). Please try again."
+            }
+            AuthResult.Error(message = message, cause = e)
+        } catch (e: IOException) {
+            AuthResult.Error(
+                message = "No internet connection. Please check your network and try again.",
+                cause   = e,
+            )
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Sign-in failed", cause = e)
+            AuthResult.Error(e.message ?: "An unexpected error occurred.", cause = e)
         }
     }
 
     override suspend fun signOut() {
-        firebaseAuth.signOut()
-        sessionManager.clearSession()
+        sessionManager.clearAuthData()
     }
 
-    override fun isLoggedIn(): Boolean = firebaseAuth.currentUser != null
-
-    // ── Extension ──────────────────────────────────────────────────────────
-
-    private fun FirebaseUser.toAuthUser(idToken: String? = null) = AuthUser(
-        uid = uid,
-        displayName = displayName,
-        email = email,
-        photoUrl = photoUrl?.toString(),
-        idToken = idToken,
-    )
+    override suspend fun getJwtToken(): String? = sessionManager.getJwtToken()
 }

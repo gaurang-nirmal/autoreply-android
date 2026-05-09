@@ -8,23 +8,27 @@ import kotlinx.coroutines.flow.Flow
 interface AuthRepository {
 
     /**
-     * Hot flow that emits the current authenticated user, or null when signed out.
-     * Backed by [com.google.firebase.auth.FirebaseAuth.AuthStateListener].
+     * Hot flow driven by [SessionManager].
+     * Emits a non-null [AuthUser] while a valid JWT is stored locally.
+     * Emits null after sign-out or when no session exists.
      */
     val currentUser: Flow<AuthUser?>
 
     /**
-     * Launches the Google account-picker via Credential Manager and signs the
-     * selected account into Firebase.
+     * Launches the Google account-picker via Credential Manager, sends the
+     * resulting ID token to the backend, and persists the returned JWT.
      *
      * @param activityContext Must be an Activity context so Credential Manager
      *   can display the account-picker bottom-sheet.
      */
     suspend fun signInWithGoogle(activityContext: Context): AuthResult
 
-    /** Signs out from Firebase and clears the local session. */
+    /** Clears the locally stored JWT and user data. */
     suspend fun signOut()
 
-    /** Synchronous check — true if Firebase reports a current user. */
-    fun isLoggedIn(): Boolean
+    /**
+     * Returns the stored app JWT for use in authenticated API requests.
+     * Returns null if the user is not signed in.
+     */
+    suspend fun getJwtToken(): String?
 }
