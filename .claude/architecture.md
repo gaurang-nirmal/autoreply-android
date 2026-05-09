@@ -39,20 +39,6 @@ app/
 ├── supportedapps/
 └── utils/
 
-Supported Applications:
-
-- WhatsApp
-- WhatsApp Business
-- Telegram
-- Messenger
-- Messenger Lite
-- Instagram
-- Twitter/X
-- LinkedIn
-- Signal
-- Meta Business Suite
-- Viber
-
 Architecture Goal:
 Keep implementation scalable and app-agnostic.
 
@@ -62,18 +48,14 @@ Incoming Notification
 → App Detection
 → Message Parser
 → Rule Engine
-→ Accessibility Automation
-→ Send Reply
+→ Reply Execution
 
-Recommended Design:
+Reply Execution Priority:
 
-- Each supported app should have:
-    - Notification parser
-    - Accessibility automation handler
-    - Package identifier
-    - UI selector strategy
+1. Notification direct reply (RemoteInput)
+2. Accessibility automation fallback
 
-Suggested Structure:
+Recommended Structure:
 
 supportedapps/
 ├── whatsapp/
@@ -82,28 +64,9 @@ supportedapps/
 ├── instagram/
 └── common/
 
-Backend Architecture:
+Each app module should contain:
 
-- Express.js
-- Prisma ORM
-- PostgreSQL
-- JWT Authentication
-
-API Structure:
-
-- /auth
-- /rules
-- /settings
-- /subscriptions
-- /supported-apps
-- /users
-
-
-Reply Execution Flow:
-
-Incoming Notification
-→ Detect Source Application
-→ Check Notification Reply Support
-→ Try RemoteInput Reply
-→ If Failed:
-    → Trigger Accessibility Automation
+- Notification parser
+- Automation handler
+- Package identifiers
+- Selector strategy

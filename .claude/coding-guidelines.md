@@ -6,21 +6,20 @@ General Rules:
 - Avoid overengineering
 - Keep classes small and reusable
 - Prefer composition over inheritance
-- Build scalable multi-app architecture
 
 Kotlin Rules:
 
-- Use Kotlin idiomatic syntax
+- Use idiomatic Kotlin syntax
 - Prefer data classes
 - Use sealed classes for UI state
 - Use extension functions where useful
 
 Compose Rules:
 
-- Use stateless composables where possible
+- Prefer stateless composables
 - Hoist state to ViewModel
-- Keep composables small
 - Use Material 3
+- Keep composables small and reusable
 
 ViewModel Rules:
 
@@ -36,31 +35,24 @@ Coroutine Rules:
 
 Repository Rules:
 
-- Repository handles data source coordination
+- Repository handles data coordination
 - ViewModel should not access database directly
 
-Multi-App Support Rules:
+Multi-App Rules:
 
 - Avoid app-specific hardcoding
 - Keep parser logic modular
-- Keep accessibility handlers isolated per app
-- Use interface-based automation handlers
+- Keep automation handlers isolated per app
+- Prefer interface-based handlers
+
+Accessibility Rules:
+
+- Use resilient node matching
+- Avoid fragile selectors
+- Add fallback selector handling
+- Add structured logging for failures
 
 Naming Rules:
 
 - Use meaningful names
-- Avoid abbreviations
-
-Backend Rules:
-
-- Use modular Express structure
-- Keep controllers thin
-- Business logic inside services
-- Use Prisma ORM only
-
-Accessibility Rules:
-
-- Accessibility node matching should be resilient
-- Avoid fragile UI assumptions
-- Add fallback selector handling
-- Log automation failures for debugging
+- Avoid unclear abbreviations

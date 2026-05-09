@@ -1,8 +1,9 @@
 package com.psspl.autoreply.di
 
-import com.psspl.autoreplyclone.BuildConfig
 import com.psspl.autoreply.data.remote.AuthApiService
+import com.psspl.autoreply.data.remote.interceptor.CurlLoggingInterceptor
 import com.psspl.autoreply.utils.AppConstants
+import com.psspl.autoreplyclone.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +34,11 @@ object NetworkModule {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    addInterceptor(CurlLoggingInterceptor())
+                }
+            }
             .addInterceptor(loggingInterceptor)
             .build()
     }

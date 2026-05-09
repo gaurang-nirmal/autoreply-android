@@ -1,58 +1,39 @@
 # Notification Parsing Skill
 
 Goal:
-Generate scalable notification parsing logic for multiple messaging applications.
+Generate scalable notification parsing logic for messaging applications.
 
-Supported Applications:
-- WhatsApp
-- WhatsApp Business
-- Telegram
-- Messenger
-- Messenger Lite
-- Instagram
-- Twitter/X
-- LinkedIn
-- Signal
-- Meta Business Suite
-- Viber
+Supported apps are defined in project-context.md
 
-Parsing Requirements:
+Requirements:
+
 - Detect source application
 - Extract sender name
 - Extract message text
 - Ignore unsupported notifications
-- Ignore summary/grouped notifications when required
-- Handle Android 13+ behavior safely
+- Ignore grouped/summary notifications where needed
+- Handle Android 13+ safely
 
-Architecture Rules:
+Architecture:
+
 - Use app-specific parser handlers
-- Avoid application hardcoding in core logic
-- Use reusable parser interfaces
 - Keep parser logic modular
+- Avoid app-specific hardcoding in shared logic
 
 Recommended Structure:
+
 - NotificationParser
 - AppNotificationParser interface
 - App-specific parser implementations
 
-Expected Output:
-- ParsedMessage model
-- Source app identifier
-- Sender information
-- Message body
-- Timestamp if available
+Preferred Reply Strategy:
 
-Important:
-- Notification structures vary per application
-- Notification formats may change after updates
-- Defensive parsing is required
+1. Try RemoteInput direct reply first
+2. Fallback to Accessibility automation
 
 Code Expectations:
+
 - Null-safe parsing
 - Structured logging
 - Fallback extraction handling
 - Clean parser separation
-
-Preferred Strategy:
-1. Try RemoteInput reply support detection
-2. Fallback to Accessibility automation when unavailable

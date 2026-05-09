@@ -1,7 +1,7 @@
 # Project Context
 
 Application Type:
-Android auto-reply application inspired by Whatauto.
+Android auto-reply application inspired by WhatsAuto.
 
 Core Features:
 
@@ -35,23 +35,12 @@ Main Flow:
 2. Identify source application
 3. Extract sender and message
 4. Match rule
-5. Trigger Accessibility Service
-6. Open corresponding app chat
-7. Send automated reply
+5. Send automated reply
 
 Subscription Logic:
 
-- Only 2 applications can be enabled simultaneously in basic/free plan
-- Premium subscription logic may unlock additional apps later
-
-Important Constraints:
-
-- Android only
-- No unofficial messaging APIs
-- Accessibility automation is core
-- Accessibility flows differ per app
-- Real-device testing required
-- UI structures may change after app updates
+- Free plan supports maximum 2 enabled apps
+- Premium plan may unlock additional apps later
 
 MVP Priorities:
 
@@ -64,21 +53,7 @@ MVP Priorities:
 Non-MVP Features:
 
 - AI chatbot
-- Multi-device sync
 - Cloud backup
 - Advanced analytics
+- Multi-device sync
 - Smart reply suggestions
-
-Reply Strategy:
-
-Preferred Reply Flow:
-1. Use notification direct reply (RemoteInput) whenever supported
-2. Fallback to Accessibility Service automation if direct reply is unavailable or fails
-
-Reason:
-- Direct notification reply is faster and less intrusive
-- Accessibility automation is required for unsupported apps or advanced flows
-
-Important:
-- Support varies by application and Android version
-- Accessibility fallback must remain reliable
