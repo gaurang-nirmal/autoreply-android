@@ -9,10 +9,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.psspl.autoreply.ui.screens.appsecurity.AppSecurityScreen
 import com.psspl.autoreply.ui.screens.automaticon.AutomaticOnScreen
+import com.psspl.autoreply.ui.screens.autoreplyconfig.AutoReplyConfigScreen
 import com.psspl.autoreply.ui.screens.backuprestore.BackupRestoreScreen
 import com.psspl.autoreply.ui.screens.dashboard.DashboardScreen
 import com.psspl.autoreply.ui.screens.directmessage.DirectMessageScreen
 import com.psspl.autoreply.ui.screens.display.DisplayScreen
+import com.psspl.autoreply.ui.screens.followup.FollowUpHistoryScreen
+import com.psspl.autoreply.ui.screens.followup.FollowUpManageScreen
+import com.psspl.autoreply.ui.screens.followup.FollowUpMessageScreen
 import com.psspl.autoreply.ui.screens.help.HelpScreen
 import com.psspl.autoreply.ui.screens.invitefriend.InviteFriendScreen
 import com.psspl.autoreply.ui.screens.menu.MenuScreen
@@ -59,6 +63,10 @@ private const val ROUTE_NOTES = "notes"
 private const val ROUTE_NOTE_EDITOR = "note_editor"
 private const val ROUTE_REPLY_TIMING = "reply_timing"
 private const val ROUTE_REPLY_LIMIT_LIST = "reply_limit_list"
+private const val ROUTE_AUTO_REPLY_CONFIG = "auto_reply_config"
+private const val ROUTE_FOLLOW_UP_MESSAGE = "follow_up_message"
+private const val ROUTE_FOLLOW_UP_HISTORY = "follow_up_history"
+private const val ROUTE_FOLLOW_UP_MANAGE = "follow_up_manage"
 
 @Composable
 fun AppNavGraph(
@@ -90,6 +98,9 @@ fun AppNavGraph(
                 },
                 onNavigateToUpgrade = {
                     navController.navigate(ROUTE_UPGRADE)
+                },
+                onNavigateToAutoReplyConfig = {
+                    navController.navigate(ROUTE_AUTO_REPLY_CONFIG)
                 },
             )
         }
@@ -352,6 +363,38 @@ fun AppNavGraph(
             ),
         ) {
             ReplyLimitListScreen(onBack = { navController.popBackStack() })
+        }
+
+        // ── Auto Reply Config ─────────────────────────────────────────────────
+        composable(ROUTE_AUTO_REPLY_CONFIG) {
+            AutoReplyConfigScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToReplyTiming = {
+                    navController.navigate("$ROUTE_REPLY_TIMING/custom")
+                },
+                onNavigateToFollowUp = {
+                    navController.navigate(ROUTE_FOLLOW_UP_MESSAGE)
+                },
+            )
+        }
+
+        // ── Follow-Up Message ─────────────────────────────────────────────────
+        composable(ROUTE_FOLLOW_UP_MESSAGE) {
+            FollowUpMessageScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToHistory = {
+                    navController.navigate(ROUTE_FOLLOW_UP_HISTORY)
+                },
+                onNavigateToManage = {
+                    navController.navigate(ROUTE_FOLLOW_UP_MANAGE)
+                },
+            )
+        }
+        composable(ROUTE_FOLLOW_UP_HISTORY) {
+            FollowUpHistoryScreen(onBack = { navController.popBackStack() })
+        }
+        composable(ROUTE_FOLLOW_UP_MANAGE) {
+            FollowUpManageScreen(onBack = { navController.popBackStack() })
         }
     }
 }

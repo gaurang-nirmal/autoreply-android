@@ -47,4 +47,14 @@ class AppSettingsRepository @Inject constructor(
         val current = dao.get() ?: AppSettingsEntity()
         dao.insert(current.copy(themeMode = mode.name))
     }
+
+    suspend fun setAutoReplyMessage(message: String) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(autoReplyMessage = message))
+    }
+
+    suspend fun setReplyType(type: String) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(replyType = type))
+    }
 }

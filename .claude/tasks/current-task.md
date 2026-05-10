@@ -1,132 +1,135 @@
 # Current Task
 
 Goal:
-Implement common Reply Timing & Reply Limit module reusable across reply types.
+Implement Home Auto Reply configuration flow and Follow-Up Message module.
 
-Current Scope:
+Modules:
 
-- Common reply timing screen
-- Shared timing logic
-- Shared reply limit logic
-- Separate persistence per reply type
-- Integration with:
-    - Keyword Reply
-    - Menu Reply
-    - Spreadsheet Reply
+- Home screen auto-reply controls
+- Auto reply configuration screen
+- Follow-up message feature
+- Reply type selection integration
+- Shared reply timing integration
 
-Feature Overview:
-Define:
+Features:
 
-- when auto-reply should trigger
-- how frequently replies are allowed
-- reply limit handling per chat/contact
+1. Home Screen
+   Add/update:
 
-Supported Reply Modes:
-
-- Reply every time
-- Reply and wait
-- Reply after delay
-- Reply once
-
-Reply Limit:
-
-- Enable/disable reply limit
-- Max replies per contact/chat
-- Reply limit tracking
-
-Requirements:
-
-UI:
-
-- Common reusable timing screen
-- Dynamic title based on reply type
-- Reply mode selection
-- Reply limit toggle
-- Max replies configuration
-- Reply limit list action
+- Auto reply enable/disable toggle
+- Auto reply text card
+- Sent messages statistics card
 
 Behavior:
 
-- Persist settings separately for each reply type
-- Apply timing logic independently per module
-- Apply reply limits independently per module/contact
-- Track sent reply counts per contact/chat
-- Support wait duration handling
-- Support delay handling
-- Support one-time reply handling
+- Toggle enables/disables global auto reply
+- Auto reply text card opens configuration screen
+- Statistics card shows sent auto replies count
 
-Reply Logic:
+2. Auto Reply Configuration Screen
 
-Reply Every Time:
+Features:
 
-- Send reply for every matching incoming message
+- Configure custom auto reply message
+- Support reply tags:
+    - name
+    - first name
+    - last name
+    - date
+    - time
+    - message
 
-Reply And Wait:
+Reply Type Options:
 
-- Send reply once
-- Wait configured duration before allowing next reply
+- Custom Message
+- Keyword Reply
+- Spreadsheet Reply
+- Menu Reply
+- AI Reply
+- Server Reply
 
-Reply After Delay:
+Behavior:
 
-- Delay sending reply by configured duration
-
-Reply Once:
-
-- Send reply only once
-- Do not send again until auto-reply restarted/reset
-
-Reply Limit Logic:
-
-- Track reply count per contact/chat
-- Stop replying after max replies reached
-- Maintain separate tracking per reply type
-
-Database:
-Create/update tables/entities for:
-
-- reply timing configuration
-- reply limit configuration
-- reply count tracking
+- Only one reply type selectable
+- Persist selected reply type
+- Persist custom message
+- Support reply tag insertion
 
 Navigation:
 
-- Open from:
-    - Keyword Reply
-    - Menu Reply
-    - Spreadsheet Reply
-- Use dedicated full screen flow
-- No bottom-sheet implementation
+- Reply Time -> existing common Reply Timing screen
+- Follow-Up Message -> Follow-Up screen
+
+3. Follow-Up Message Module
+
+Features:
+
+- Enable/disable follow-up
+- Configure follow-up message
+- Support reply tags
+- Define follow-up scope:
+    - all reply messages
+    - specific reply messages
+    - exclude reply messages
+
+Manage reply messages:
+
+- Add/manage included messages
+- Add/manage excluded messages
+
+History:
+
+- Follow-up history screen placeholder/navigation
+
+Core Logic:
+
+- Send follow-up only if recipient does not reply
+- Delay configurable
+- Follow-up linked with sent auto replies
+- Maintain sent/scheduled follow-up history
+
+Database:
+
+Create/update entities for:
+
+- home auto reply config
+- selected reply type
+- custom auto reply message
+- follow-up settings
+- follow-up history
+- follow-up include/exclude mappings
 
 Files:
 
 UI:
 
-- ReplyTimingScreen.kt
+- HomeScreen.kt
+- AutoReplyConfigurationScreen.kt
+- FollowUpMessageScreen.kt
 
 ViewModel:
 
-- ReplyTimingViewModel.kt
+- HomeViewModel.kt
+- AutoReplyConfigurationViewModel.kt
+- FollowUpViewModel.kt
 
 Database:
 
-- ReplyTimingEntity.kt
-- ReplyLimitTrackingEntity.kt
-- ReplyTimingDao.kt
+- AutoReplyConfigEntity.kt
+- FollowUpConfigEntity.kt
+- FollowUpHistoryEntity.kt
 
 Repository:
 
-- ReplyTimingRepository.kt
+- AutoReplyRepository.kt
+- FollowUpRepository.kt
 
-Expected Output:
+Requirements:
 
-- Reusable timing module
-- Shared timing logic
-- Separate configuration per reply type
-- Working reply limit handling
-
-Important:
-
-- MVP-only
-- Reuse architecture where possible
-- Avoid duplicate timing implementations
+- Full screen implementation only
+- No bottom sheets
+- Reuse existing reply timing screen
+- Reuse shared design system/components
+- Maintain MVP-focused implementation
 - No backend integration
+- Keep implementation modular and reusable

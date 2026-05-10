@@ -26,6 +26,13 @@ data class AppSettingsEntity(
     @ColumnInfo(name = "theme_mode")
     val themeMode: String = "SYSTEM",
 
+    @ColumnInfo(name = "auto_reply_message")
+    val autoReplyMessage: String = "I am sleeping, text you later.",
+
+    // CUSTOM | KEYWORD | SPREADSHEET | MENU | AI_REPLY | SERVER
+    @ColumnInfo(name = "reply_type")
+    val replyType: String = "CUSTOM",
+
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long = System.currentTimeMillis()
 )

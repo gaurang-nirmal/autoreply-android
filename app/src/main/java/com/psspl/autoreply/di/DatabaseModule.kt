@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.psspl.autoreply.database.AppDatabase
 import com.psspl.autoreply.database.dao.AppSettingsDao
 import com.psspl.autoreply.database.dao.DirectMessageDao
+import com.psspl.autoreply.database.dao.FollowUpDao
 import com.psspl.autoreply.database.dao.KeywordRuleDao
 import com.psspl.autoreply.database.dao.MenuReplyDao
 import com.psspl.autoreply.database.dao.NoteDao
@@ -57,4 +58,7 @@ object DatabaseModule {
 
     @Provides
     fun provideReplyTimingDao(db: AppDatabase): ReplyTimingDao = db.replyTimingDao()
+
+    @Provides
+    fun provideFollowUpDao(db: AppDatabase): FollowUpDao = db.followUpDao()
 }

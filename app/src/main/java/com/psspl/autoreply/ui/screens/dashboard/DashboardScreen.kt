@@ -9,29 +9,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.psspl.autoreply.ui.components.AppCard
 import com.psspl.autoreply.ui.components.AppTopBar
-import com.psspl.autoreply.ui.components.EmptyState
 import com.psspl.autoreply.ui.components.TopbarMenu
 import com.psspl.autoreply.ui.components.TopbarMenuItem
 import com.psspl.autoreply.ui.theme.AutoReplyTheme
@@ -45,10 +53,15 @@ fun DashboardScreen(
     onNavigateToHelp: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToUpgrade: () -> Unit = {},
+    onNavigateToAutoReplyConfig: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val unreadCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle()
+    val isAutoReplyEnabled by viewModel.isAutoReplyEnabled.collectAsStateWithLifecycle()
+    val autoReplyMessage by viewModel.autoReplyMessage.collectAsStateWithLifecycle()
+    val sentRepliesCount by viewModel.sentRepliesCount.collectAsStateWithLifecycle()
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -84,22 +97,22 @@ fun DashboardScreen(
                                 "Not Working?",
                                 Icons.Filled.Build,
                                 isDividerAfter = true,
-                                onClick = onNavigateToNotWorking
+                                onClick = onNavigateToNotWorking,
                             ),
                             TopbarMenuItem(
                                 "Help",
                                 Icons.AutoMirrored.Filled.Help,
-                                onClick = onNavigateToHelp
+                                onClick = onNavigateToHelp,
                             ),
                             TopbarMenuItem(
                                 "Settings",
                                 Icons.Filled.Settings,
-                                onClick = onNavigateToSettings
+                                onClick = onNavigateToSettings,
                             ),
                             TopbarMenuItem(
                                 "Upgrade",
                                 Icons.Filled.Star,
-                                onClick = onNavigateToUpgrade
+                                onClick = onNavigateToUpgrade,
                             ),
                         ),
                     )
@@ -113,14 +126,77 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            Text(
-                text = "Auto-reply is inactive",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(Spacing.lg))
+            // ── Auto reply toggle ──────────────────────────────────────────────
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column {
+                        Text(
+                            text = "Auto reply",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = if (isAutoReplyEnabled) "ON" else "OFF",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAutoReplyEnabled) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
+                    Switch(
+                        checked = isAutoReplyEnabled,
+                        onCheckedChange = { viewModel.toggleAutoReply(it) },
+                    )
+                }
+            }
+
+            // ── Auto reply text (clickable → config) ───────────────────────────
+            AppCard(onClick = onNavigateToAutoReplyConfig) {
+                Text(
+                    text = "Auto reply text",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = autoReplyMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 3,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Edit auto reply",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            // ── Stats row ──────────────────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -152,13 +228,23 @@ fun DashboardScreen(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(Spacing.lg))
-            EmptyState(
-                title = "No auto-replies configured",
-                description = "Create a rule to start sending automated replies",
-                icon = Icons.Filled.Notifications,
-                modifier = Modifier.weight(1f),
-            )
+
+            // ── Sent replies counter ───────────────────────────────────────────
+            AppCard {
+                Text(
+                    text = "Sent auto replies",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Text(
+                    text = sentRepliesCount.toString(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.md))
         }
     }
 }

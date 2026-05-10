@@ -10,11 +10,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    appSettingsRepository: AppSettingsRepository,
+    private val appSettingsRepository: AppSettingsRepository,
     replyNotificationsRepository: ReplyNotificationsRepository,
 ) : ViewModel() {
 
@@ -27,4 +28,35 @@ class DashboardViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = 0,
         )
+
+    val isAutoReplyEnabled = appSettingsRepository.isAutoReplyEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false,
+        )
+
+    val autoReplyMessage = appSettingsRepository.settings
+        .map { it?.autoReplyMessage ?: DEFAULT_MESSAGE }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DEFAULT_MESSAGE,
+        )
+
+    val sentRepliesCount = replyNotificationsRepository.allNotifications
+        .map { it.size }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0,
+        )
+
+    fun toggleAutoReply(enabled: Boolean) = viewModelScope.launch {
+        appSettingsRepository.setAutoReplyEnabled(enabled)
+    }
+
+    companion object {
+        private const val DEFAULT_MESSAGE = "I am sleeping, text you later."
+    }
 }
