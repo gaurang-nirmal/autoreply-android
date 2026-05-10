@@ -42,7 +42,7 @@ class SupportedAppsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            repository.seedDefaultAppsIfEmpty(defaultApps)
+            repository.seedDefaultApps(defaultApps)
         }
     }
 
@@ -60,6 +60,7 @@ class SupportedAppsViewModel @Inject constructor(
             SupportedAppEntity(appPackage = "com.whatsapp.w4b", displayName = "WhatsApp Business"),
             SupportedAppEntity(appPackage = "org.telegram.messenger", displayName = "Telegram"),
             SupportedAppEntity(appPackage = "com.facebook.orca", displayName = "Messenger"),
+            SupportedAppEntity(appPackage = "com.facebook.mlite", displayName = "Messenger Lite"),
             SupportedAppEntity(appPackage = "com.instagram.android", displayName = "Instagram"),
             SupportedAppEntity(appPackage = "com.twitter.android", displayName = "Twitter / X"),
             SupportedAppEntity(appPackage = "com.linkedin.android", displayName = "LinkedIn"),

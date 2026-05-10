@@ -1,49 +1,56 @@
 # Current Task
 
 Goal:
-Integrate existing backup/restore implementation and add search support in Keyword Reply module.
+Implement backup/restore support for Menu Reply module.
 
-Scope:
+Current Scope:
 
-- Connect Backup action
-- Connect Restore action
-- Connect Clear All action
-- Add keyword reply search feature
-- Reuse existing backup/restore implementation
+- Menu Reply export/import
+- Nested hierarchy restoration
+- Parent-child mapping restoration
+- Backup manager integration
 
 Requirements:
 
-Topbar Actions:
+Backup/Restore:
 
-- Search
-- Backup
-- Restore
-- Clear All
+- Export Menu Reply data
+- Restore Menu Reply data
+- Preserve nested submenu hierarchy
+- Preserve parent-child relationships
+- Preserve stop reply configurations
+- Reuse Keyword Reply backup architecture
 
-Search:
+Database:
+Include:
 
-- Search keyword replies
-- Search by:
-    - incoming keyword
-    - reply message
-- Real-time filtering
+- menu replies
+- menu items
+- hierarchy mappings
+- stop reply configurations
 
-Behavior:
+Files:
 
-- Backup keyword reply records
-- Restore keyword reply records
-- Clear all keyword replies
-- Show confirmation before clear all
-- Filter listing while typing search query
+Backup:
 
-UI:
+- MenuReplyBackupManager.kt
 
-- Match application theme
-- Use reusable popup/dialog system
-- Modern search UI behavior
+Repository:
+
+- MenuReplyRepository.kt
+
+Database:
+
+- MenuReplyDao.kt
+
+Expected Output:
+
+- Working Menu Reply backup/restore
+- Correct hierarchy restoration
+- Shared backup architecture reuse
 
 Important:
 
-- Reuse existing backup/restore implementation
-- Avoid duplicate backup logic
+- Modify only required files
 - MVP-only
+- Avoid duplicate backup logic

@@ -16,6 +16,10 @@ import com.psspl.autoreply.ui.screens.display.DisplayScreen
 import com.psspl.autoreply.ui.screens.help.HelpScreen
 import com.psspl.autoreply.ui.screens.invitefriend.InviteFriendScreen
 import com.psspl.autoreply.ui.screens.menu.MenuScreen
+import com.psspl.autoreply.ui.screens.menureply.AddEditMenuReplyScreen
+import com.psspl.autoreply.ui.screens.menureply.MenuReplyItemChildrenScreen
+import com.psspl.autoreply.ui.screens.menureply.MenuReplyMoreOptionsScreen
+import com.psspl.autoreply.ui.screens.menureply.MenuReplyScreen
 import com.psspl.autoreply.ui.screens.notworking.NotWorkingScreen
 import com.psspl.autoreply.ui.screens.replyheaderfooter.ReplyHeaderFooterScreen
 import com.psspl.autoreply.ui.screens.replynotifications.ReplyNotificationsScreen
@@ -39,6 +43,10 @@ private const val ROUTE_APP_SECURITY = "setting_app_security"
 private const val ROUTE_DISPLAY = "setting_display"
 private const val ROUTE_INVITE_FRIEND = "setting_invite_friend"
 private const val ROUTE_KEYWORD_REPLY_FORM = "keyword_reply_form"
+private const val ROUTE_MENU_REPLY = "menu_reply"
+private const val ROUTE_MENU_REPLY_FORM = "menu_reply_form"
+private const val ROUTE_MENU_REPLY_MORE_OPTIONS = "menu_reply_more_options"
+private const val ROUTE_MENU_REPLY_CHILDREN = "menu_reply_children"
 
 @Composable
 fun AppNavGraph(
@@ -80,6 +88,9 @@ fun AppNavGraph(
                 },
                 onNavigateToKeywordReply = {
                     navController.navigate(BottomNavItem.Rules.route)
+                },
+                onNavigateToMenuReply = {
+                    navController.navigate(ROUTE_MENU_REPLY)
                 },
             )
         }
@@ -166,6 +177,93 @@ fun AppNavGraph(
         }
         composable(ROUTE_INVITE_FRIEND) {
             InviteFriendScreen(onBack = { navController.popBackStack() })
+        }
+
+        // ── Menu Reply ────────────────────────────────────────────────────────
+        composable(ROUTE_MENU_REPLY) {
+            MenuReplyScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToAddTrigger = {
+                    navController.navigate("$ROUTE_MENU_REPLY_FORM/0/0/-1")
+                },
+                onNavigateToEditTrigger = { replyId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_FORM/$replyId/0/-1")
+                },
+                onNavigateToAddItem = { menuReplyId, parentItemId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_FORM/$menuReplyId/0/$parentItemId")
+                },
+                onNavigateToEditItem = { menuReplyId, itemId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_FORM/$menuReplyId/$itemId/-1")
+                },
+                onNavigateToMoreOptions = { itemId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_MORE_OPTIONS/$itemId")
+                },
+                onNavigateToItemChildren = { menuReplyId, itemId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_CHILDREN/$menuReplyId/$itemId")
+                },
+            )
+        }
+
+        // ── Menu Reply children (recursive — same route re-used at every level) ──
+        composable(
+            route = "$ROUTE_MENU_REPLY_CHILDREN/{menuReplyId}/{parentItemId}",
+            arguments = listOf(
+                navArgument("menuReplyId") { type = NavType.IntType; defaultValue = 0 },
+                navArgument("parentItemId") { type = NavType.IntType; defaultValue = 0 },
+            ),
+        ) { backStackEntry ->
+            val menuReplyId = backStackEntry.arguments?.getInt("menuReplyId") ?: 0
+            val parentItemId = backStackEntry.arguments?.getInt("parentItemId") ?: 0
+            MenuReplyItemChildrenScreen(
+                menuReplyId = menuReplyId,
+                parentItemId = parentItemId,
+                onBack = { navController.popBackStack() },
+                onNavigateToChildren = { replyId, itemId ->
+                    // Navigate to the same route — creates a new back-stack entry
+                    navController.navigate("$ROUTE_MENU_REPLY_CHILDREN/$replyId/$itemId")
+                },
+                onNavigateToAddItem = { replyId, parentId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_FORM/$replyId/0/$parentId")
+                },
+                onNavigateToEditItem = { replyId, itemId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_FORM/$replyId/$itemId/-1")
+                },
+                onNavigateToMoreOptions = { itemId ->
+                    navController.navigate("$ROUTE_MENU_REPLY_MORE_OPTIONS/$itemId")
+                },
+            )
+        }
+
+        composable(
+            route = "$ROUTE_MENU_REPLY_FORM/{menuReplyId}/{itemId}/{parentItemId}",
+            arguments = listOf(
+                navArgument("menuReplyId") { type = NavType.IntType; defaultValue = 0 },
+                navArgument("itemId") { type = NavType.IntType; defaultValue = 0 },
+                navArgument("parentItemId") { type = NavType.IntType; defaultValue = -1 },
+            ),
+        ) { backStackEntry ->
+            val menuReplyId = backStackEntry.arguments?.getInt("menuReplyId") ?: 0
+            val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
+            val parentItemId = backStackEntry.arguments?.getInt("parentItemId") ?: -1
+            AddEditMenuReplyScreen(
+                menuReplyId = menuReplyId,
+                itemId = itemId,
+                parentItemId = parentItemId,
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = "$ROUTE_MENU_REPLY_MORE_OPTIONS/{itemId}",
+            arguments = listOf(
+                navArgument("itemId") { type = NavType.IntType; defaultValue = 0 },
+            ),
+        ) { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
+            MenuReplyMoreOptionsScreen(
+                itemId = itemId,
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 }

@@ -6,6 +6,7 @@ import com.psspl.autoreply.database.AppDatabase
 import com.psspl.autoreply.database.dao.AppSettingsDao
 import com.psspl.autoreply.database.dao.DirectMessageDao
 import com.psspl.autoreply.database.dao.KeywordRuleDao
+import com.psspl.autoreply.database.dao.MenuReplyDao
 import com.psspl.autoreply.database.dao.ReplyNotificationDao
 import com.psspl.autoreply.database.dao.SupportedAppDao
 import dagger.Module
@@ -41,4 +42,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDirectMessageDao(db: AppDatabase): DirectMessageDao = db.directMessageDao()
+
+    @Provides
+    fun provideMenuReplyDao(db: AppDatabase): MenuReplyDao = db.menuReplyDao()
 }
