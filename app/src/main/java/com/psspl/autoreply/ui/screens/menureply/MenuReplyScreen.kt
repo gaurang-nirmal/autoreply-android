@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -83,6 +84,7 @@ fun MenuReplyScreen(
     onNavigateToEditItem: (menuReplyId: Int, itemId: Int) -> Unit = { _, _ -> },
     onNavigateToMoreOptions: (itemId: Int) -> Unit = {},
     onNavigateToItemChildren: (menuReplyId: Int, itemId: Int) -> Unit = { _, _ -> },
+    onNavigateToReplyTiming: () -> Unit = {},
     viewModel: MenuReplyViewModel = hiltViewModel(),
 ) {
     val repliesWithItems by viewModel.menuRepliesWithItems.collectAsStateWithLifecycle()
@@ -158,6 +160,12 @@ fun MenuReplyScreen(
                 actions = {
                     TopbarMenu(
                         items = listOf(
+                            TopbarMenuItem(
+                                label = "Reply Time",
+                                icon = Icons.Filled.Timer,
+                                isDividerAfter = true,
+                                onClick = onNavigateToReplyTiming,
+                            ),
                             TopbarMenuItem(
                                 label = "Backup",
                                 icon = Icons.Filled.Backup,

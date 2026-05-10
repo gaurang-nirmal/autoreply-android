@@ -9,6 +9,7 @@ import com.psspl.autoreply.database.dao.KeywordRuleDao
 import com.psspl.autoreply.database.dao.MenuReplyDao
 import com.psspl.autoreply.database.dao.NoteDao
 import com.psspl.autoreply.database.dao.ReplyNotificationDao
+import com.psspl.autoreply.database.dao.ReplyTimingDao
 import com.psspl.autoreply.database.dao.SupportedAppDao
 import com.psspl.autoreply.database.dao.WelcomeMessageDao
 import dagger.Module
@@ -53,4 +54,7 @@ object DatabaseModule {
 
     @Provides
     fun provideNoteDao(db: AppDatabase): NoteDao = db.noteDao()
+
+    @Provides
+    fun provideReplyTimingDao(db: AppDatabase): ReplyTimingDao = db.replyTimingDao()
 }

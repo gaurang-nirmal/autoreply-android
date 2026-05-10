@@ -26,6 +26,8 @@ import com.psspl.autoreply.ui.screens.notworking.NotWorkingScreen
 import com.psspl.autoreply.ui.screens.replyheaderfooter.ReplyHeaderFooterScreen
 import com.psspl.autoreply.ui.screens.replynotifications.ReplyNotificationsScreen
 import com.psspl.autoreply.ui.screens.replytime.ReplyTimeScreen
+import com.psspl.autoreply.ui.screens.replytiming.ReplyLimitListScreen
+import com.psspl.autoreply.ui.screens.replytiming.ReplyTimingScreen
 import com.psspl.autoreply.ui.screens.rules.KeywordReplyFormScreen
 import com.psspl.autoreply.ui.screens.rules.RulesScreen
 import com.psspl.autoreply.ui.screens.settings.SettingsScreen
@@ -55,6 +57,8 @@ private const val ROUTE_WELCOME_MESSAGE = "welcome_message"
 private const val ROUTE_WELCOME_MESSAGE_EDIT = "welcome_message_edit"
 private const val ROUTE_NOTES = "notes"
 private const val ROUTE_NOTE_EDITOR = "note_editor"
+private const val ROUTE_REPLY_TIMING = "reply_timing"
+private const val ROUTE_REPLY_LIMIT_LIST = "reply_limit_list"
 
 @Composable
 fun AppNavGraph(
@@ -116,6 +120,9 @@ fun AppNavGraph(
                 },
                 onNavigateToEditRule = { ruleId ->
                     navController.navigate("$ROUTE_KEYWORD_REPLY_FORM/$ruleId")
+                },
+                onNavigateToReplyTiming = {
+                    navController.navigate("$ROUTE_REPLY_TIMING/keyword")
                 },
             )
         }
@@ -214,6 +221,9 @@ fun AppNavGraph(
                 },
                 onNavigateToItemChildren = { menuReplyId, itemId ->
                     navController.navigate("$ROUTE_MENU_REPLY_CHILDREN/$menuReplyId/$itemId")
+                },
+                onNavigateToReplyTiming = {
+                    navController.navigate("$ROUTE_REPLY_TIMING/menu")
                 },
             )
         }
@@ -318,6 +328,30 @@ fun AppNavGraph(
             WelcomeMessageEditScreen(
                 onBack = { navController.popBackStack() },
             )
+        }
+
+        // ── Reply Timing ──────────────────────────────────────────────────────
+        composable(
+            route = "$ROUTE_REPLY_TIMING/{replyType}",
+            arguments = listOf(
+                navArgument("replyType") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val replyType = backStackEntry.arguments?.getString("replyType") ?: "keyword"
+            ReplyTimingScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToLimitList = {
+                    navController.navigate("$ROUTE_REPLY_LIMIT_LIST/$replyType")
+                },
+            )
+        }
+        composable(
+            route = "$ROUTE_REPLY_LIMIT_LIST/{replyType}",
+            arguments = listOf(
+                navArgument("replyType") { type = NavType.StringType },
+            ),
+        ) {
+            ReplyLimitListScreen(onBack = { navController.popBackStack() })
         }
     }
 }

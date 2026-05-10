@@ -1,91 +1,132 @@
 # Current Task
 
 Goal:
-Implement Notes module for saving and sharing text notes.
+Implement common Reply Timing & Reply Limit module reusable across reply types.
 
 Current Scope:
 
-- Notes listing screen
-- Create/Edit note screen
-- Share note functionality
-- Multiple selection support
-- Delete functionality
-- Room persistence
-- Navigation from Menu screen
+- Common reply timing screen
+- Shared timing logic
+- Shared reply limit logic
+- Separate persistence per reply type
+- Integration with:
+    - Keyword Reply
+    - Menu Reply
+    - Spreadsheet Reply
 
 Feature Overview:
-User can:
+Define:
 
-- create notes
-- edit notes
-- share notes to external apps
-- delete notes
-- select multiple notes
+- when auto-reply should trigger
+- how frequently replies are allowed
+- reply limit handling per chat/contact
+
+Supported Reply Modes:
+
+- Reply every time
+- Reply and wait
+- Reply after delay
+- Reply once
+
+Reply Limit:
+
+- Enable/disable reply limit
+- Max replies per contact/chat
+- Reply limit tracking
 
 Requirements:
 
 UI:
 
-- Notes listing screen using grid layout
-- Add note action
-- Create/Edit note screen
-- Share action
-- Multiple selection mode
-- Delete action for selected notes
+- Common reusable timing screen
+- Dynamic title based on reply type
+- Reply mode selection
+- Reply limit toggle
+- Max replies configuration
+- Reply limit list action
 
 Behavior:
 
-- Create note
-- Update note
-- Delete single note
-- Delete multiple selected notes
-- Share note text using Android share intent
-- Long press enables selection mode
-- Multiple notes can be selected
+- Persist settings separately for each reply type
+- Apply timing logic independently per module
+- Apply reply limits independently per module/contact
+- Track sent reply counts per contact/chat
+- Support wait duration handling
+- Support delay handling
+- Support one-time reply handling
+
+Reply Logic:
+
+Reply Every Time:
+
+- Send reply for every matching incoming message
+
+Reply And Wait:
+
+- Send reply once
+- Wait configured duration before allowing next reply
+
+Reply After Delay:
+
+- Delay sending reply by configured duration
+
+Reply Once:
+
+- Send reply only once
+- Do not send again until auto-reply restarted/reset
+
+Reply Limit Logic:
+
+- Track reply count per contact/chat
+- Stop replying after max replies reached
+- Maintain separate tracking per reply type
 
 Database:
-Create dedicated table/entity for:
+Create/update tables/entities for:
 
-- notes
+- reply timing configuration
+- reply limit configuration
+- reply count tracking
 
 Navigation:
 
-- Add navigation from Menu screen
-- Open dedicated full screen Notes flow
+- Open from:
+    - Keyword Reply
+    - Menu Reply
+    - Spreadsheet Reply
+- Use dedicated full screen flow
 - No bottom-sheet implementation
 
 Files:
 
 UI:
 
-- NotesScreen.kt
-- CreateEditNoteScreen.kt
+- ReplyTimingScreen.kt
 
 ViewModel:
 
-- NotesViewModel.kt
+- ReplyTimingViewModel.kt
 
 Database:
 
-- NoteEntity.kt
-- NoteDao.kt
+- ReplyTimingEntity.kt
+- ReplyLimitTrackingEntity.kt
+- ReplyTimingDao.kt
 
 Repository:
 
-- NotesRepository.kt
+- ReplyTimingRepository.kt
 
 Expected Output:
 
-- Working Notes module
-- Grid-based note listing
-- Share integration
-- Multi-select delete support
-- Persistent Room storage
+- Reusable timing module
+- Shared timing logic
+- Separate configuration per reply type
+- Working reply limit handling
 
 Important:
 
 - MVP-only
-- No backend sync
-- No cloud sync
-- No rich text editor
-- No folders/tags
+- Reuse architecture where possible
+- Avoid duplicate timing implementations
+- No backend integration

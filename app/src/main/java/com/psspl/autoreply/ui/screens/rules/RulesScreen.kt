@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -91,6 +92,7 @@ fun RulesScreen(
     onBack: () -> Unit = {},
     onNavigateToAddRule: () -> Unit = {},
     onNavigateToEditRule: (Int) -> Unit = {},
+    onNavigateToReplyTiming: () -> Unit = {},
     viewModel: RulesViewModel = hiltViewModel(),
 ) {
     val rules by viewModel.rules.collectAsStateWithLifecycle()
@@ -172,9 +174,15 @@ fun RulesScreen(
                         )
                     }
 
-                    // Overflow menu: Backup, Restore, Clear All
+                    // Overflow menu: Reply Time, Backup, Restore, Clear All
                     TopbarMenu(
                         items = listOf(
+                            TopbarMenuItem(
+                                label = "Reply Time",
+                                icon = Icons.Filled.Timer,
+                                isDividerAfter = true,
+                                onClick = onNavigateToReplyTiming,
+                            ),
                             TopbarMenuItem(
                                 label = "Backup",
                                 icon = Icons.Filled.Backup,
