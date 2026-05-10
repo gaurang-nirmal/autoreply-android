@@ -87,6 +87,15 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
 
+    // Image loading
+    implementation(libs.coil.compose)
+
+    // AppCompat (required for AppCompatActivity used by BiometricPrompt)
+    implementation(libs.appcompat)
+
+    // Biometric / device credential authentication
+    implementation(libs.biometric)
+
     // Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

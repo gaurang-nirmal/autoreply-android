@@ -1,35 +1,62 @@
 # Current Task
 
 Goal:
-Implement scalable notification parsing architecture for multiple supported applications.
+Redesign popup menus, dialogs, and reusable overlay components.
+
+Current Scope:
+
+- Popup menu redesign
+- Alert dialog redesign
+- Confirmation dialog redesign
+- Reusable themed overlay components
 
 Requirements:
 
-- Detect notification source app
-- Extract sender name
-- Extract message text
-- Support:
-    - WhatsApp
-    - Telegram
-    - Messenger
-- Create reusable parser interface
-- Ignore unsupported notifications
+UI:
+
+- Match application theme and branding
+- Modern Material 3 styling
+- Consistent spacing, typography, and colors
+- Rounded corners
+- Improved shadows/elevation
+- Better button styling
+- Better menu item styling
+
+Components:
+
+- Popup menus
+- Confirmation dialogs
+- Alert dialogs
+- Bottom dialogs/sheets where applicable
+
+Behavior:
+
+- Reusable component structure
+- Centralized theme styling
+- Consistent interaction animations
 
 Files:
 
-- NotificationListenerService.kt
-- NotificationParser.kt
-- AppNotificationParser.kt
-- SupportedApp.kt
+UI:
+
+- AppPopupMenu.kt
+- AppAlertDialog.kt
+- AppConfirmationDialog.kt
+
+Theme:
+
+- DialogTheme.kt
+- MenuTheme.kt
 
 Expected Output:
 
-- Clean modular parser system
-- App-specific parser handlers
-- Logging for debugging
+- Modern consistent overlays
+- Reusable dialog system
+- Reusable popup menu system
+- UI aligned with app theme
 
 Important:
 
-- Keep implementation scalable
-- Avoid app-specific hardcoding
-- MVP-focused implementation only
+- MVP-only
+- Focus on reusable UI system
+- Avoid duplicated dialog implementations

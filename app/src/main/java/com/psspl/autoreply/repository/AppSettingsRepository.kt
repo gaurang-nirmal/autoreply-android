@@ -1,0 +1,43 @@
+package com.psspl.autoreply.repository
+
+import com.psspl.autoreply.database.dao.AppSettingsDao
+import com.psspl.autoreply.database.entity.AppSettingsEntity
+import com.psspl.autoreply.utils.ThemeMode
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class AppSettingsRepository @Inject constructor(
+    private val dao: AppSettingsDao
+) {
+    val settings: Flow<AppSettingsEntity?> = dao.observe()
+
+    val appLockEnabled: Flow<Boolean> = dao.observe().map { it?.appLockEnabled ?: false }
+
+    val themeMode: Flow<ThemeMode> = dao.observe().map { entity ->
+        ThemeMode.entries.find { it.name == entity?.themeMode } ?: ThemeMode.SYSTEM
+    }
+
+    suspend fun get(): AppSettingsEntity? = dao.get()
+
+    suspend fun save(settings: AppSettingsEntity) = dao.insert(settings)
+
+    suspend fun update(settings: AppSettingsEntity) = dao.update(settings)
+
+    suspend fun markNotificationsViewed() {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(notificationsLastViewedAt = System.currentTimeMillis()))
+    }
+
+    suspend fun setAppLockEnabled(enabled: Boolean) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(appLockEnabled = enabled))
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(themeMode = mode.name))
+    }
+}

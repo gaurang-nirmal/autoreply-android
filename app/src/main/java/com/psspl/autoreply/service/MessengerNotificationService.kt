@@ -8,9 +8,28 @@ import android.os.Build
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.psspl.autoreply.database.entity.ReplyNotificationEntity
+import com.psspl.autoreply.repository.ReplyNotificationsRepository
+import com.psspl.autoreply.repository.SupportedAppsRepository
 import com.psspl.autoreply.utils.AppLogger
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MessengerNotificationService : NotificationListenerService() {
+
+    @Inject
+    lateinit var supportedAppsRepository: SupportedAppsRepository
+
+    @Inject
+    lateinit var replyNotificationsRepository: ReplyNotificationsRepository
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         private const val TAG = "MessengerNLS"
@@ -43,16 +62,34 @@ class MessengerNotificationService : NotificationListenerService() {
             return
         }
 
-        AppLogger.i(TAG, "Keyword matched — preparing direct reply to $sender")
-        sendDirectReply(sbn)
+        AppLogger.i(TAG, "Keyword matched — checking if Messenger is enabled in Supported Apps")
+
+        serviceScope.launch {
+            if (!supportedAppsRepository.isAppEnabled(MESSENGER_PACKAGE)) {
+                AppLogger.d(TAG, "Messenger is disabled in Supported Apps — reply suppressed")
+                return@launch
+            }
+            AppLogger.i(TAG, "Messenger is enabled — preparing direct reply to $sender")
+            val sent = sendDirectReply(sbn)
+            if (sent) {
+                replyNotificationsRepository.insert(
+                    ReplyNotificationEntity(
+                        appPackage = MESSENGER_PACKAGE,
+                        senderName = sender,
+                        replyText = REPLY_TEXT,
+                    )
+                )
+                AppLogger.d(TAG, "Reply logged to history")
+            }
+        }
     }
 
-    private fun sendDirectReply(sbn: StatusBarNotification) {
+    private fun sendDirectReply(sbn: StatusBarNotification): Boolean {
         val replyText = REPLY_TEXT
         val actions = sbn.notification.actions
         if (actions.isNullOrEmpty()) {
             AppLogger.w(TAG, "No actions found on notification — cannot reply")
-            return
+            return false
         }
 
         // Prefer the action explicitly marked as Reply (API 28+); fall back to any action with RemoteInput
@@ -67,13 +104,13 @@ class MessengerNotificationService : NotificationListenerService() {
                 "No RemoteInput reply action found — notification may not support direct reply"
             )
             logActions(actions)
-            return
+            return false
         }
 
         val remoteInputs = replyAction.remoteInputs
         if (remoteInputs.isNullOrEmpty()) {
             AppLogger.w(TAG, "Reply action has no RemoteInputs")
-            return
+            return false
         }
 
         AppLogger.d(
@@ -83,19 +120,21 @@ class MessengerNotificationService : NotificationListenerService() {
 
         val replyIntent = Intent()
         val bundle = Bundle()
-        // Populate every RemoteInput key — normally only one for text reply
         remoteInputs.forEach { ri ->
             bundle.putCharSequence(ri.resultKey, replyText)
         }
         RemoteInput.addResultsToIntent(remoteInputs, replyIntent, bundle)
 
-        try {
+        return try {
             replyAction.actionIntent.send(this, 0, replyIntent)
             AppLogger.i(TAG, "Direct reply sent: '$replyText'")
+            true
         } catch (e: PendingIntent.CanceledException) {
             AppLogger.e(TAG, "Reply PendingIntent was cancelled: ${e.message}")
+            false
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to send reply: ${e.message}")
+            false
         }
     }
 
@@ -107,6 +146,11 @@ class MessengerNotificationService : NotificationListenerService() {
                     "action[$i] title=${action.title} semanticAction=${action.semanticAction} remoteInputs=${action.remoteInputs?.size ?: 0}"
                 )
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {

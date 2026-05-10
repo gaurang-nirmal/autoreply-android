@@ -1,0 +1,44 @@
+package com.psspl.autoreply.di
+
+import android.content.Context
+import androidx.room.Room
+import com.psspl.autoreply.database.AppDatabase
+import com.psspl.autoreply.database.dao.AppSettingsDao
+import com.psspl.autoreply.database.dao.DirectMessageDao
+import com.psspl.autoreply.database.dao.KeywordRuleDao
+import com.psspl.autoreply.database.dao.ReplyNotificationDao
+import com.psspl.autoreply.database.dao.SupportedAppDao
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
+        Room.databaseBuilder(context, AppDatabase::class.java, "autoreply.db")
+            .fallbackToDestructiveMigration()
+            .build()
+
+    @Provides
+    fun provideKeywordRuleDao(db: AppDatabase): KeywordRuleDao = db.keywordRuleDao()
+
+    @Provides
+    fun provideAppSettingsDao(db: AppDatabase): AppSettingsDao = db.appSettingsDao()
+
+    @Provides
+    fun provideSupportedAppDao(db: AppDatabase): SupportedAppDao = db.supportedAppDao()
+
+    @Provides
+    fun provideReplyNotificationDao(db: AppDatabase): ReplyNotificationDao =
+        db.replyNotificationDao()
+
+    @Provides
+    fun provideDirectMessageDao(db: AppDatabase): DirectMessageDao = db.directMessageDao()
+}
