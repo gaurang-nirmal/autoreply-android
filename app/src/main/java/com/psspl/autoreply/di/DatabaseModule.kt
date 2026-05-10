@@ -7,6 +7,7 @@ import com.psspl.autoreply.database.dao.AppSettingsDao
 import com.psspl.autoreply.database.dao.DirectMessageDao
 import com.psspl.autoreply.database.dao.KeywordRuleDao
 import com.psspl.autoreply.database.dao.MenuReplyDao
+import com.psspl.autoreply.database.dao.NoteDao
 import com.psspl.autoreply.database.dao.ReplyNotificationDao
 import com.psspl.autoreply.database.dao.SupportedAppDao
 import com.psspl.autoreply.database.dao.WelcomeMessageDao
@@ -49,4 +50,7 @@ object DatabaseModule {
 
     @Provides
     fun provideWelcomeMessageDao(db: AppDatabase): WelcomeMessageDao = db.welcomeMessageDao()
+
+    @Provides
+    fun provideNoteDao(db: AppDatabase): NoteDao = db.noteDao()
 }

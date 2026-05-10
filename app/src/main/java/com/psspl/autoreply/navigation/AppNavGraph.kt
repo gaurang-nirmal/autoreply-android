@@ -20,6 +20,8 @@ import com.psspl.autoreply.ui.screens.menureply.AddEditMenuReplyScreen
 import com.psspl.autoreply.ui.screens.menureply.MenuReplyItemChildrenScreen
 import com.psspl.autoreply.ui.screens.menureply.MenuReplyMoreOptionsScreen
 import com.psspl.autoreply.ui.screens.menureply.MenuReplyScreen
+import com.psspl.autoreply.ui.screens.notes.NoteEditorScreen
+import com.psspl.autoreply.ui.screens.notes.NotesScreen
 import com.psspl.autoreply.ui.screens.notworking.NotWorkingScreen
 import com.psspl.autoreply.ui.screens.replyheaderfooter.ReplyHeaderFooterScreen
 import com.psspl.autoreply.ui.screens.replynotifications.ReplyNotificationsScreen
@@ -51,6 +53,8 @@ private const val ROUTE_MENU_REPLY_MORE_OPTIONS = "menu_reply_more_options"
 private const val ROUTE_MENU_REPLY_CHILDREN = "menu_reply_children"
 private const val ROUTE_WELCOME_MESSAGE = "welcome_message"
 private const val ROUTE_WELCOME_MESSAGE_EDIT = "welcome_message_edit"
+private const val ROUTE_NOTES = "notes"
+private const val ROUTE_NOTE_EDITOR = "note_editor"
 
 @Composable
 fun AppNavGraph(
@@ -98,6 +102,9 @@ fun AppNavGraph(
                 },
                 onNavigateToWelcomeMessage = {
                     navController.navigate(ROUTE_WELCOME_MESSAGE)
+                },
+                onNavigateToNotes = {
+                    navController.navigate(ROUTE_NOTES)
                 },
             )
         }
@@ -269,6 +276,31 @@ fun AppNavGraph(
             val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
             MenuReplyMoreOptionsScreen(
                 itemId = itemId,
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        // ── Notes ─────────────────────────────────────────────────────────────
+        composable(ROUTE_NOTES) {
+            NotesScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToAddNote = {
+                    navController.navigate("$ROUTE_NOTE_EDITOR/0")
+                },
+                onNavigateToEditNote = { noteId ->
+                    navController.navigate("$ROUTE_NOTE_EDITOR/$noteId")
+                },
+            )
+        }
+        composable(
+            route = "$ROUTE_NOTE_EDITOR/{noteId}",
+            arguments = listOf(
+                navArgument("noteId") { type = NavType.IntType; defaultValue = 0 },
+            ),
+        ) { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getInt("noteId") ?: 0
+            NoteEditorScreen(
+                noteId = noteId,
                 onBack = { navController.popBackStack() },
             )
         }

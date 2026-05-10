@@ -1,102 +1,91 @@
 # Current Task
 
 Goal:
-Implement Welcome Message module with timing-based auto-reply logic.
+Implement Notes module for saving and sharing text notes.
 
 Current Scope:
 
-- Welcome Message screen
-- Timing configuration
-- Welcome message editor
-- Enable/disable feature
+- Notes listing screen
+- Create/Edit note screen
+- Share note functionality
+- Multiple selection support
+- Delete functionality
 - Room persistence
 - Navigation from Menu screen
 
 Feature Overview:
-Automatically send welcome message:
+User can:
 
-- on first message
-- or after configured cooldown days
+- create notes
+- edit notes
+- share notes to external apps
+- delete notes
+- select multiple notes
 
 Requirements:
 
 UI:
 
-- Welcome Message screen
-- Enable/disable toggle
-- Change days action
-- Welcome message preview
-- Edit message action
+- Notes listing screen using grid layout
+- Add note action
+- Create/Edit note screen
+- Share action
+- Multiple selection mode
+- Delete action for selected notes
 
 Behavior:
 
-- Send welcome message on first interaction
-- Re-send only after configured cooldown days
-- Persist timing configuration
-- Persist welcome message
-- Persist feature enabled state
-
-Timing Logic:
-
-- Configurable cooldown days
-- Default timing support
-- Track last welcome message timestamp per contact
-
-Core Welcome Logic:
-
-- Send welcome message if no previous welcome message record exists for contact
-- If record exists:
-    - calculate difference between current time and last welcome sent timestamp
-    - send again only if configured cooldown days completed
-- Do not send welcome message repeatedly within cooldown duration
-- Update last welcome sent timestamp after successful auto-reply
-- Maintain tracking separately per contact
-- Logic must work independently per messaging app/contact
+- Create note
+- Update note
+- Delete single note
+- Delete multiple selected notes
+- Share note text using Android share intent
+- Long press enables selection mode
+- Multiple notes can be selected
 
 Database:
 Create dedicated table/entity for:
 
-- welcome message configuration
-- contact timing tracking
+- notes
 
 Navigation:
 
 - Add navigation from Menu screen
-- Open dedicated Welcome Message screen
-- Use full screen flow
+- Open dedicated full screen Notes flow
 - No bottom-sheet implementation
 
 Files:
 
 UI:
 
-- WelcomeMessageScreen.kt
-- EditWelcomeMessageScreen.kt
+- NotesScreen.kt
+- CreateEditNoteScreen.kt
 
 ViewModel:
 
-- WelcomeMessageViewModel.kt
+- NotesViewModel.kt
 
 Database:
 
-- WelcomeMessageEntity.kt
-- WelcomeMessageContactEntity.kt
-- WelcomeMessageDao.kt
+- NoteEntity.kt
+- NoteDao.kt
 
 Repository:
 
-- WelcomeMessageRepository.kt
+- NotesRepository.kt
 
 Expected Output:
 
-- Working Welcome Message module
-- Timing-based welcome logic
+- Working Notes module
+- Grid-based note listing
+- Share integration
+- Multi-select delete support
 - Persistent Room storage
-- Navigation from Menu screen
 
 Important:
 
 - MVP-only
 - No backend sync
-- No analytics
-- No AI integration
+- No cloud sync
+- No rich text editor
+- No folders/tags
