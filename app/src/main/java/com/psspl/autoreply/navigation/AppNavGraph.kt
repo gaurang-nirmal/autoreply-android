@@ -29,6 +29,8 @@ import com.psspl.autoreply.ui.screens.rules.RulesScreen
 import com.psspl.autoreply.ui.screens.settings.SettingsScreen
 import com.psspl.autoreply.ui.screens.supportedapps.SupportedAppsScreen
 import com.psspl.autoreply.ui.screens.upgrade.UpgradeScreen
+import com.psspl.autoreply.ui.screens.welcomemessage.WelcomeMessageEditScreen
+import com.psspl.autoreply.ui.screens.welcomemessage.WelcomeMessageScreen
 
 private const val ROUTE_REPLY_NOTIFICATIONS = "reply_notifications"
 private const val ROUTE_DIRECT_MESSAGE = "direct_message"
@@ -47,6 +49,8 @@ private const val ROUTE_MENU_REPLY = "menu_reply"
 private const val ROUTE_MENU_REPLY_FORM = "menu_reply_form"
 private const val ROUTE_MENU_REPLY_MORE_OPTIONS = "menu_reply_more_options"
 private const val ROUTE_MENU_REPLY_CHILDREN = "menu_reply_children"
+private const val ROUTE_WELCOME_MESSAGE = "welcome_message"
+private const val ROUTE_WELCOME_MESSAGE_EDIT = "welcome_message_edit"
 
 @Composable
 fun AppNavGraph(
@@ -91,6 +95,9 @@ fun AppNavGraph(
                 },
                 onNavigateToMenuReply = {
                     navController.navigate(ROUTE_MENU_REPLY)
+                },
+                onNavigateToWelcomeMessage = {
+                    navController.navigate(ROUTE_WELCOME_MESSAGE)
                 },
             )
         }
@@ -262,6 +269,21 @@ fun AppNavGraph(
             val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
             MenuReplyMoreOptionsScreen(
                 itemId = itemId,
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        // ── Welcome Message ───────────────────────────────────────────────────
+        composable(ROUTE_WELCOME_MESSAGE) {
+            WelcomeMessageScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToEditMessage = {
+                    navController.navigate(ROUTE_WELCOME_MESSAGE_EDIT)
+                },
+            )
+        }
+        composable(ROUTE_WELCOME_MESSAGE_EDIT) {
+            WelcomeMessageEditScreen(
                 onBack = { navController.popBackStack() },
             )
         }

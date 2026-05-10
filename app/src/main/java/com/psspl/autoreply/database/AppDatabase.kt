@@ -8,6 +8,7 @@ import com.psspl.autoreply.database.dao.KeywordRuleDao
 import com.psspl.autoreply.database.dao.MenuReplyDao
 import com.psspl.autoreply.database.dao.ReplyNotificationDao
 import com.psspl.autoreply.database.dao.SupportedAppDao
+import com.psspl.autoreply.database.dao.WelcomeMessageDao
 import com.psspl.autoreply.database.entity.AppSettingsEntity
 import com.psspl.autoreply.database.entity.DirectMessageEntity
 import com.psspl.autoreply.database.entity.KeywordRuleEntity
@@ -15,6 +16,8 @@ import com.psspl.autoreply.database.entity.MenuReplyEntity
 import com.psspl.autoreply.database.entity.MenuReplyItemEntity
 import com.psspl.autoreply.database.entity.ReplyNotificationEntity
 import com.psspl.autoreply.database.entity.SupportedAppEntity
+import com.psspl.autoreply.database.entity.WelcomeMessageConfigEntity
+import com.psspl.autoreply.database.entity.WelcomeMessageContactEntity
 
 @Database(
     entities = [
@@ -25,8 +28,10 @@ import com.psspl.autoreply.database.entity.SupportedAppEntity
         DirectMessageEntity::class,
         MenuReplyEntity::class,
         MenuReplyItemEntity::class,
+        WelcomeMessageConfigEntity::class,
+        WelcomeMessageContactEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,4 +41,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun replyNotificationDao(): ReplyNotificationDao
     abstract fun directMessageDao(): DirectMessageDao
     abstract fun menuReplyDao(): MenuReplyDao
+    abstract fun welcomeMessageDao(): WelcomeMessageDao
 }
