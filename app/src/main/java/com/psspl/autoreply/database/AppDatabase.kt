@@ -21,7 +21,7 @@ import com.psspl.autoreply.database.entity.SupportedAppEntity
         ReplyNotificationEntity::class,
         DirectMessageEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

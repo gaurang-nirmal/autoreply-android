@@ -33,4 +33,7 @@ interface KeywordRuleDao {
     // Returns rules for a specific app plus any global rules (app_package = '')
     @Query("SELECT * FROM keyword_rules WHERE (app_package = :appPackage OR app_package = '') AND is_active = 1")
     fun getActiveForApp(appPackage: String): Flow<List<KeywordRuleEntity>>
+
+    @Query("DELETE FROM keyword_rules")
+    suspend fun deleteAll()
 }

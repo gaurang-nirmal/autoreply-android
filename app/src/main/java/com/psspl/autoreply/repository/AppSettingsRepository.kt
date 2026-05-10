@@ -14,6 +14,8 @@ class AppSettingsRepository @Inject constructor(
 ) {
     val settings: Flow<AppSettingsEntity?> = dao.observe()
 
+    val isAutoReplyEnabled: Flow<Boolean> = dao.observe().map { it?.isAutoReplyEnabled ?: false }
+
     val appLockEnabled: Flow<Boolean> = dao.observe().map { it?.appLockEnabled ?: false }
 
     val themeMode: Flow<ThemeMode> = dao.observe().map { entity ->
@@ -29,6 +31,11 @@ class AppSettingsRepository @Inject constructor(
     suspend fun markNotificationsViewed() {
         val current = dao.get() ?: AppSettingsEntity()
         dao.insert(current.copy(notificationsLastViewedAt = System.currentTimeMillis()))
+    }
+
+    suspend fun setAutoReplyEnabled(enabled: Boolean) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(isAutoReplyEnabled = enabled))
     }
 
     suspend fun setAppLockEnabled(enabled: Boolean) {

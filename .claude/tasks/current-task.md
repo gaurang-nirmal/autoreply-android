@@ -1,62 +1,49 @@
 # Current Task
 
 Goal:
-Redesign popup menus, dialogs, and reusable overlay components.
+Integrate existing backup/restore implementation and add search support in Keyword Reply module.
 
-Current Scope:
+Scope:
 
-- Popup menu redesign
-- Alert dialog redesign
-- Confirmation dialog redesign
-- Reusable themed overlay components
+- Connect Backup action
+- Connect Restore action
+- Connect Clear All action
+- Add keyword reply search feature
+- Reuse existing backup/restore implementation
 
 Requirements:
 
-UI:
+Topbar Actions:
 
-- Match application theme and branding
-- Modern Material 3 styling
-- Consistent spacing, typography, and colors
-- Rounded corners
-- Improved shadows/elevation
-- Better button styling
-- Better menu item styling
+- Search
+- Backup
+- Restore
+- Clear All
 
-Components:
+Search:
 
-- Popup menus
-- Confirmation dialogs
-- Alert dialogs
-- Bottom dialogs/sheets where applicable
+- Search keyword replies
+- Search by:
+    - incoming keyword
+    - reply message
+- Real-time filtering
 
 Behavior:
 
-- Reusable component structure
-- Centralized theme styling
-- Consistent interaction animations
-
-Files:
+- Backup keyword reply records
+- Restore keyword reply records
+- Clear all keyword replies
+- Show confirmation before clear all
+- Filter listing while typing search query
 
 UI:
 
-- AppPopupMenu.kt
-- AppAlertDialog.kt
-- AppConfirmationDialog.kt
-
-Theme:
-
-- DialogTheme.kt
-- MenuTheme.kt
-
-Expected Output:
-
-- Modern consistent overlays
-- Reusable dialog system
-- Reusable popup menu system
-- UI aligned with app theme
+- Match application theme
+- Use reusable popup/dialog system
+- Modern search UI behavior
 
 Important:
 
+- Reuse existing backup/restore implementation
+- Avoid duplicate backup logic
 - MVP-only
-- Focus on reusable UI system
-- Avoid duplicated dialog implementations

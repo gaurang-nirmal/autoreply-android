@@ -24,4 +24,6 @@ class KeywordRuleRepository @Inject constructor(
     suspend fun update(rule: KeywordRuleEntity) = dao.update(rule)
 
     suspend fun delete(rule: KeywordRuleEntity) = dao.delete(rule)
+
+    suspend fun deleteAll() = dao.deleteAll()
 }

@@ -34,6 +34,7 @@ import com.psspl.autoreply.ui.theme.Spacing
 @Composable
 fun MenuScreen(
     onNavigateToSupportedApps: () -> Unit = {},
+    onNavigateToKeywordReply: () -> Unit = {},
     viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -108,6 +109,7 @@ fun MenuScreen(
                     onClick = {
                         when (feature.title) {
                             "Supported Apps" -> onNavigateToSupportedApps()
+                            "Keyword Reply" -> onNavigateToKeywordReply()
                             else -> Toast.makeText(
                                 context,
                                 "${feature.title} — coming soon",

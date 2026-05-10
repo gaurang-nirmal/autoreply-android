@@ -45,6 +45,6 @@ sealed class BottomNavItem(
     )
 
     companion object {
-        val items = listOf(Dashboard, Menu, Rules, SupportedApps, Settings)
+        val items = listOf(Dashboard, Menu, SupportedApps, Settings)
     }
 }

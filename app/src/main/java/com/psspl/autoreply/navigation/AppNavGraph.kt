@@ -3,8 +3,10 @@ package com.psspl.autoreply.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.psspl.autoreply.ui.screens.appsecurity.AppSecurityScreen
 import com.psspl.autoreply.ui.screens.automaticon.AutomaticOnScreen
 import com.psspl.autoreply.ui.screens.backuprestore.BackupRestoreScreen
@@ -18,6 +20,7 @@ import com.psspl.autoreply.ui.screens.notworking.NotWorkingScreen
 import com.psspl.autoreply.ui.screens.replyheaderfooter.ReplyHeaderFooterScreen
 import com.psspl.autoreply.ui.screens.replynotifications.ReplyNotificationsScreen
 import com.psspl.autoreply.ui.screens.replytime.ReplyTimeScreen
+import com.psspl.autoreply.ui.screens.rules.KeywordReplyFormScreen
 import com.psspl.autoreply.ui.screens.rules.RulesScreen
 import com.psspl.autoreply.ui.screens.settings.SettingsScreen
 import com.psspl.autoreply.ui.screens.supportedapps.SupportedAppsScreen
@@ -35,6 +38,7 @@ private const val ROUTE_BACKUP_RESTORE = "setting_backup_restore"
 private const val ROUTE_APP_SECURITY = "setting_app_security"
 private const val ROUTE_DISPLAY = "setting_display"
 private const val ROUTE_INVITE_FRIEND = "setting_invite_friend"
+private const val ROUTE_KEYWORD_REPLY_FORM = "keyword_reply_form"
 
 @Composable
 fun AppNavGraph(
@@ -74,10 +78,33 @@ fun AppNavGraph(
                 onNavigateToSupportedApps = {
                     navController.navigate(BottomNavItem.SupportedApps.route)
                 },
+                onNavigateToKeywordReply = {
+                    navController.navigate(BottomNavItem.Rules.route)
+                },
             )
         }
         composable(BottomNavItem.Rules.route) {
-            RulesScreen()
+            RulesScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToAddRule = {
+                    navController.navigate("$ROUTE_KEYWORD_REPLY_FORM/0")
+                },
+                onNavigateToEditRule = { ruleId ->
+                    navController.navigate("$ROUTE_KEYWORD_REPLY_FORM/$ruleId")
+                },
+            )
+        }
+        composable(
+            route = "$ROUTE_KEYWORD_REPLY_FORM/{ruleId}",
+            arguments = listOf(
+                navArgument("ruleId") { type = NavType.IntType; defaultValue = 0 }
+            ),
+        ) { backStackEntry ->
+            val ruleId = backStackEntry.arguments?.getInt("ruleId") ?: 0
+            KeywordReplyFormScreen(
+                ruleId = ruleId,
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(BottomNavItem.SupportedApps.route) {
             SupportedAppsScreen()

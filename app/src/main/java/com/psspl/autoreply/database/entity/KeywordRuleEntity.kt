@@ -21,6 +21,17 @@ data class KeywordRuleEntity(
     @ColumnInfo(name = "is_active")
     val isActive: Boolean = true,
 
+    /** "EXACT" or "CONTAINS" */
+    @ColumnInfo(name = "match_type")
+    val matchType: String = "EXACT",
+
+    /** Comma-separated ReplyOption names, e.g. "CHATGPT,SERVER_REPLY" */
+    @ColumnInfo(name = "reply_options")
+    val replyOptions: String = "",
+
+    @ColumnInfo(name = "send_email")
+    val sendEmail: Boolean = false,
+
     @ColumnInfo(name = "created_at")
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )
