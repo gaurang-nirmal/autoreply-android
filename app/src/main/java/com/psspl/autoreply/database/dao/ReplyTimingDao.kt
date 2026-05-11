@@ -16,6 +16,10 @@ interface ReplyTimingDao {
     @Query("SELECT * FROM reply_timing_config WHERE reply_type = :replyType")
     fun getConfig(replyType: String): Flow<ReplyTimingConfigEntity?>
 
+    /** One-shot (non-Flow) read used by the execution engine. */
+    @Query("SELECT * FROM reply_timing_config WHERE reply_type = :replyType")
+    suspend fun getConfigOnce(replyType: String): ReplyTimingConfigEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertConfig(config: ReplyTimingConfigEntity)
 

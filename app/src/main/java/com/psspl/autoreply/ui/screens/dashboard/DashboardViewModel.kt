@@ -2,8 +2,11 @@ package com.psspl.autoreply.ui.screens.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.psspl.autoreply.database.entity.DefaultMessageEntity
 import com.psspl.autoreply.repository.AppSettingsRepository
+import com.psspl.autoreply.repository.DefaultMessageRepository
 import com.psspl.autoreply.repository.ReplyNotificationsRepository
+import com.psspl.autoreply.ui.screens.autoreplyconfig.ReplyType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,8 +19,13 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val appSettingsRepository: AppSettingsRepository,
+    private val defaultMessageRepository: DefaultMessageRepository,
     replyNotificationsRepository: ReplyNotificationsRepository,
 ) : ViewModel() {
+
+    init {
+        viewModelScope.launch { defaultMessageRepository.seedIfEmpty() }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val unreadNotificationCount = appSettingsRepository.settings
@@ -44,6 +52,17 @@ class DashboardViewModel @Inject constructor(
             initialValue = DEFAULT_MESSAGE,
         )
 
+    val selectedReplyType = appSettingsRepository.settings
+        .map { settings ->
+            val key = settings?.replyType ?: ReplyType.CUSTOM.name
+            runCatching { ReplyType.valueOf(key) }.getOrDefault(ReplyType.CUSTOM)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ReplyType.CUSTOM,
+        )
+
     val sentRepliesCount = replyNotificationsRepository.allNotifications
         .map { it.size }
         .stateIn(
@@ -52,8 +71,36 @@ class DashboardViewModel @Inject constructor(
             initialValue = 0,
         )
 
+    val defaultMessages = defaultMessageRepository.getAllMessages()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
+
+    val messagesExpanded = appSettingsRepository.settings
+        .map { it?.messagesExpanded ?: true }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = true,
+        )
+
     fun toggleAutoReply(enabled: Boolean) = viewModelScope.launch {
         appSettingsRepository.setAutoReplyEnabled(enabled)
+    }
+
+    fun toggleMessagesExpanded() = viewModelScope.launch {
+        appSettingsRepository.setMessagesExpanded(!messagesExpanded.value)
+    }
+
+    fun selectMessage(message: DefaultMessageEntity) = viewModelScope.launch {
+        appSettingsRepository.setAutoReplyMessage(message.message)
+        appSettingsRepository.setReplyType(ReplyType.CUSTOM.name)
+    }
+
+    fun clearCustomMessages() = viewModelScope.launch {
+        defaultMessageRepository.clearCustomMessages()
     }
 
     companion object {

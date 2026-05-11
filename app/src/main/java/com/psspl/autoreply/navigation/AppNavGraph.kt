@@ -369,8 +369,9 @@ fun AppNavGraph(
         composable(ROUTE_AUTO_REPLY_CONFIG) {
             AutoReplyConfigScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToReplyTiming = {
-                    navController.navigate("$ROUTE_REPLY_TIMING/custom")
+                // key = lowercase of active ReplyType enum, e.g. "keyword", "menu", "custom"
+                onNavigateToReplyTiming = { key ->
+                    navController.navigate("$ROUTE_REPLY_TIMING/$key")
                 },
                 onNavigateToFollowUp = {
                     navController.navigate(ROUTE_FOLLOW_UP_MESSAGE)

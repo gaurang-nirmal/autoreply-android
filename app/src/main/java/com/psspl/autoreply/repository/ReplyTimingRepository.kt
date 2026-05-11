@@ -17,6 +17,10 @@ class ReplyTimingRepository @Inject constructor(
     fun getConfig(replyType: String): Flow<ReplyTimingConfigEntity?> =
         dao.getConfig(replyType)
 
+    /** One-shot read for use in the execution engine (non-Flow). */
+    suspend fun getConfigOnce(replyType: String): ReplyTimingConfigEntity? =
+        dao.getConfigOnce(replyType)
+
     suspend fun upsertConfig(config: ReplyTimingConfigEntity) =
         dao.upsertConfig(config)
 

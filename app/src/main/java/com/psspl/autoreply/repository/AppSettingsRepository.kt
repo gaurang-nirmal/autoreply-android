@@ -57,4 +57,9 @@ class AppSettingsRepository @Inject constructor(
         val current = dao.get() ?: AppSettingsEntity()
         dao.insert(current.copy(replyType = type))
     }
+
+    suspend fun setMessagesExpanded(expanded: Boolean) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(messagesExpanded = expanded))
+    }
 }

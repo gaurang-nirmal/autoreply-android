@@ -1,24 +1,23 @@
 package com.psspl.autoreply.ui.screens.rules
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -61,10 +60,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -96,7 +95,8 @@ fun RulesScreen(
     viewModel: RulesViewModel = hiltViewModel(),
 ) {
     val rules by viewModel.rules.collectAsStateWithLifecycle()
-    val isModuleEnabled by viewModel.isModuleEnabled.collectAsStateWithLifecycle()
+    // TODO: Global auto-reply toggle lives on the Dashboard — temporarily removed from here
+    // val isModuleEnabled by viewModel.isModuleEnabled.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
 
@@ -229,10 +229,12 @@ fun RulesScreen(
                 .padding(innerPadding),
         ) {
             // ── Module toggle bar ─────────────────────────────────────────────
-            ModuleToggleBar(
-                enabled = isModuleEnabled,
-                onToggle = viewModel::setModuleEnabled,
-            )
+            // TODO: Global auto-reply on/off is controlled from the Dashboard screen.
+            //       This per-screen toggle is temporarily hidden to avoid confusion.
+            // ModuleToggleBar(
+            //     enabled = isModuleEnabled,
+            //     onToggle = viewModel::setModuleEnabled,
+            // )
 
             // ── Search bar (animated) ─────────────────────────────────────────
             AnimatedVisibility(
@@ -291,7 +293,6 @@ fun RulesScreen(
                         .padding(Spacing.md),
                 )
             } else {
-                RuleListHeader()
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(
                         items = rules,
@@ -385,15 +386,35 @@ private fun SwipeableRuleItem(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else false
+                showDeleteDialog = true
+            }
+            false // never auto-dismiss — dialog controls the outcome
         },
         positionalThreshold = { totalDistance -> totalDistance * 0.4f },
     )
+
+    // Reset swipe position when dialog is dismissed without deleting
+    LaunchedEffect(showDeleteDialog) {
+        if (!showDeleteDialog) dismissState.reset()
+    }
+
+    if (showDeleteDialog) {
+        ConfirmationDialog(
+            title = "Delete Rule",
+            message = "Delete \"${rule.keyword}\"? This action cannot be undone.",
+            confirmLabel = "Delete",
+            isDestructive = true,
+            onConfirm = { onDelete() },
+            onDismiss = { showDeleteDialog = false },
+        )
+    }
+
+    val context = LocalContext.current
 
     SwipeToDismissBox(
         state = dismissState,
@@ -402,7 +423,17 @@ private fun SwipeableRuleItem(
         backgroundContent = { DeleteBackground() },
         modifier = modifier,
     ) {
-        RuleListItem(rule = rule, onClick = onClick)
+        RuleListItem(
+            rule = rule,
+            onClick = onClick,
+            onLongClick = {
+                Toast.makeText(
+                    context,
+                    "•  Tap to edit\n•  Swipe left to delete",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            },
+        )
     }
 }
 
@@ -434,86 +465,94 @@ private fun DeleteBackground() {
     }
 }
 
-// ─── Rule List Item (chat bubble style) ──────────────────────────────────────
+// ─── Rule List Item (chat preview style) ─────────────────────────────────────
 
+private val ChatBackground = Color(0xFFECE5DD)
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RuleListItem(
     rule: KeywordRuleEntity,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
-        Column {
-            Row(
+        // Chat preview area
+        Surface(
+            color = ChatBackground,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
-                // Keyword bubble (incoming – left)
-                Surface(
-                    shape = RoundedCornerShape(
-                        topStart = 2.dp, topEnd = 12.dp,
-                        bottomEnd = 12.dp, bottomStart = 12.dp,
-                    ),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        text = rule.keyword,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs),
-                    )
+                // Incoming keyword bubble — left-aligned, wraps content
+                Box(modifier = Modifier.fillMaxWidth(0.75f)) {
+                    Surface(
+                        shape = RoundedCornerShape(
+                            topStart = 2.dp, topEnd = 12.dp,
+                            bottomEnd = 12.dp, bottomStart = 12.dp,
+                        ),
+                        color = Color.White,
+                    ) {
+                        Text(
+                            text = rule.keyword,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.sm,
+                                vertical = Spacing.xs
+                            ),
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.width(Spacing.md))
-
-                // Reply bubble (outgoing – right, WhatsApp green)
-                Surface(
-                    shape = RoundedCornerShape(
-                        topStart = 12.dp, topEnd = 2.dp,
-                        bottomEnd = 12.dp, bottomStart = 12.dp,
-                    ),
-                    color = GreenBubble,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        text = rule.replyText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs),
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(Spacing.sm))
-
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = "Edit rule",
+                // Outgoing reply bubble — right-aligned, wraps content
+                Box(
                     modifier = Modifier
-                        .size(18.dp)
-                        .clip(CircleShape),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                )
+                        .fillMaxWidth(0.75f)
+                        .align(Alignment.End),
+                    contentAlignment = Alignment.TopEnd,
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(
+                            topStart = 12.dp, topEnd = 2.dp,
+                            bottomEnd = 12.dp, bottomStart = 12.dp,
+                        ),
+                        color = GreenBubble,
+                    ) {
+                        Text(
+                            text = rule.replyText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.sm,
+                                vertical = Spacing.xs
+                            ),
+                        )
+                    }
+                }
             }
-
-            // Divider
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(0.5.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant),
-            )
         }
+
+        // Row divider
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(0.5.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
+        )
     }
 }
 

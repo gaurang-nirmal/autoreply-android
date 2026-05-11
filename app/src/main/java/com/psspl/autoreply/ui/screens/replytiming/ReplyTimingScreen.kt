@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -89,6 +90,7 @@ fun ReplyTimingScreen(
     var showWaitDialog by remember { mutableStateOf(false) }
     var showDelayDialog by remember { mutableStateOf(false) }
     var showMaxRepliesDialog by remember { mutableStateOf(false) }
+    var infoMode by remember { mutableStateOf<ReplyMode?>(null) }
 
     if (showWaitDialog) {
         SecondsInputDialog(
@@ -112,6 +114,9 @@ fun ReplyTimingScreen(
             onConfirm = { viewModel.setMaxReplies(it); showMaxRepliesDialog = false },
             onDismiss = { showMaxRepliesDialog = false },
         )
+    }
+    infoMode?.let { mode ->
+        ReplyModeInfoDialog(mode = mode, onDismiss = { infoMode = null })
     }
 
     Scaffold(
@@ -179,6 +184,7 @@ fun ReplyTimingScreen(
                             mode = mode,
                             selected = selectedMode == mode,
                             onSelect = { viewModel.setReplyMode(mode) },
+                            onInfoClick = { infoMode = mode },
                         )
 
                         // Duration sub-row for configurable modes
@@ -322,20 +328,25 @@ private fun ReplyModeOption(
     mode: ReplyMode,
     selected: Boolean,
     onSelect: () -> Unit,
+    onInfoClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onSelect)
-            .padding(start = Spacing.xs, end = Spacing.md, top = Spacing.xs, bottom = Spacing.xs),
-        verticalAlignment = Alignment.Top,
+            .padding(start = Spacing.xs, end = Spacing.xs, top = Spacing.xs, bottom = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
             onClick = onSelect,
             colors = RadioButtonDefaults.colors(selectedColor = TealAccent),
         )
-        Column(modifier = Modifier.padding(top = 12.dp)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(top = 2.dp),
+        ) {
             Text(
                 text = mode.label,
                 style = MaterialTheme.typography.bodyLarge,
@@ -346,6 +357,14 @@ private fun ReplyModeOption(
                 text = mode.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onInfoClick) {
+            Icon(
+                imageVector = Icons.Filled.Info,
+                contentDescription = "More info about ${mode.label}",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
             )
         }
     }
@@ -382,6 +401,61 @@ private fun DurationSubRow(label: String, value: String, onClick: () -> Unit) {
 }
 
 // ─── Dialogs ──────────────────────────────────────────────────────────────────
+
+private fun ReplyMode.infoDescription(): String = when (this) {
+    ReplyMode.EVERY_TIME ->
+        "Sends an auto-reply every single time a new message arrives from any contact. " +
+                "There are no restrictions or cooldowns — every incoming message triggers a reply. " +
+                "Best suited for always-on responses such as customer service bots or away notifications."
+
+    ReplyMode.REPLY_AND_WAIT ->
+        "Sends one auto-reply per contact, then pauses for a configured wait period before " +
+                "replying to that same contact again. If the contact sends another message during " +
+                "the wait window, it is ignored. Use this to avoid flooding a chat with repeated " +
+                "messages while still staying responsive."
+
+    ReplyMode.REPLY_AFTER_DELAY ->
+        "Delays the auto-reply by a configurable number of seconds after the message is received. " +
+                "The reply is still sent every time, but with a pause before each one. This can make " +
+                "responses feel more natural or give your server/AI time to process before answering."
+
+    ReplyMode.REPLY_ONCE ->
+        "Sends an auto-reply only once per contact, then permanently stops replying to them. " +
+                "To reset a contact and allow another reply, clear the reply limit list or restart " +
+                "auto-reply. Ideal for one-time welcome messages, promotional announcements, or " +
+                "opt-in confirmation flows."
+}
+
+@Composable
+private fun ReplyModeInfoDialog(mode: ReplyMode, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Filled.Info,
+                contentDescription = null,
+                tint = TealAccent,
+            )
+        },
+        title = {
+            Text(
+                text = mode.label,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+        },
+        text = {
+            Text(
+                text = mode.infoDescription(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Got it") }
+        },
+    )
+}
 
 @Composable
 private fun SecondsInputDialog(

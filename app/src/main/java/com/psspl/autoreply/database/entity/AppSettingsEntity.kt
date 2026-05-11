@@ -33,6 +33,10 @@ data class AppSettingsEntity(
     @ColumnInfo(name = "reply_type")
     val replyType: String = "CUSTOM",
 
+    /** Whether the Messages card on Dashboard is expanded (list visible). */
+    @ColumnInfo(name = "messages_expanded")
+    val messagesExpanded: Boolean = true,
+
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long = System.currentTimeMillis()
 )

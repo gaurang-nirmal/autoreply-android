@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import com.psspl.autoreply.database.AppDatabase
 import com.psspl.autoreply.database.dao.AppSettingsDao
+import com.psspl.autoreply.database.dao.DefaultMessageDao
 import com.psspl.autoreply.database.dao.DirectMessageDao
 import com.psspl.autoreply.database.dao.FollowUpDao
 import com.psspl.autoreply.database.dao.KeywordRuleDao
 import com.psspl.autoreply.database.dao.MenuReplyDao
+import com.psspl.autoreply.database.dao.MenuSessionDao
 import com.psspl.autoreply.database.dao.NoteDao
 import com.psspl.autoreply.database.dao.ReplyNotificationDao
 import com.psspl.autoreply.database.dao.ReplyTimingDao
@@ -51,6 +53,9 @@ object DatabaseModule {
     fun provideMenuReplyDao(db: AppDatabase): MenuReplyDao = db.menuReplyDao()
 
     @Provides
+    fun provideMenuSessionDao(db: AppDatabase): MenuSessionDao = db.menuSessionDao()
+
+    @Provides
     fun provideWelcomeMessageDao(db: AppDatabase): WelcomeMessageDao = db.welcomeMessageDao()
 
     @Provides
@@ -61,4 +66,7 @@ object DatabaseModule {
 
     @Provides
     fun provideFollowUpDao(db: AppDatabase): FollowUpDao = db.followUpDao()
+
+    @Provides
+    fun provideDefaultMessageDao(db: AppDatabase): DefaultMessageDao = db.defaultMessageDao()
 }

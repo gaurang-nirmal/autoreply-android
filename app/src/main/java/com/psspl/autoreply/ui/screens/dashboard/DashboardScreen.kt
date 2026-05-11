@@ -1,7 +1,9 @@
 package com.psspl.autoreply.ui.screens.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,10 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -23,6 +29,9 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +40,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -40,8 +52,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.psspl.autoreply.ui.components.AppCard
 import com.psspl.autoreply.ui.components.AppTopBar
+import com.psspl.autoreply.ui.components.ConfirmationDialog
 import com.psspl.autoreply.ui.components.TopbarMenu
 import com.psspl.autoreply.ui.components.TopbarMenuItem
+import com.psspl.autoreply.ui.screens.autoreplyconfig.ReplyType
 import com.psspl.autoreply.ui.theme.AutoReplyTheme
 import com.psspl.autoreply.ui.theme.Spacing
 
@@ -60,7 +74,23 @@ fun DashboardScreen(
     val unreadCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle()
     val isAutoReplyEnabled by viewModel.isAutoReplyEnabled.collectAsStateWithLifecycle()
     val autoReplyMessage by viewModel.autoReplyMessage.collectAsStateWithLifecycle()
+    val selectedReplyType by viewModel.selectedReplyType.collectAsStateWithLifecycle()
     val sentRepliesCount by viewModel.sentRepliesCount.collectAsStateWithLifecycle()
+    val defaultMessages by viewModel.defaultMessages.collectAsStateWithLifecycle()
+    val messagesExpanded by viewModel.messagesExpanded.collectAsStateWithLifecycle()
+
+    var showClearAllDialog by remember { mutableStateOf(false) }
+
+    if (showClearAllDialog) {
+        ConfirmationDialog(
+            title = "Clear All",
+            message = "This will remove all custom messages. Seeded default messages will be preserved.",
+            confirmLabel = "Clear All",
+            isDestructive = true,
+            onConfirm = { viewModel.clearCustomMessages() },
+            onDismiss = { showClearAllDialog = false },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -177,22 +207,42 @@ fun DashboardScreen(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Spacer(modifier = Modifier.height(Spacing.xs))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = autoReplyMessage,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 3,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = "Edit auto reply",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                if (selectedReplyType == ReplyType.CUSTOM) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = autoReplyMessage,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "Edit auto reply",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = selectedReplyType.label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Configure ${selectedReplyType.label}",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
 
@@ -244,7 +294,132 @@ fun DashboardScreen(
                 )
             }
 
+            // ── Default Messages ───────────────────────────────────────────────
+            MessagesCard(
+                messages = defaultMessages,
+                expanded = messagesExpanded,
+                onToggleExpand = { viewModel.toggleMessagesExpanded() },
+                onMessageClick = { viewModel.selectMessage(it) },
+                onClearAll = { showClearAllDialog = true },
+            )
+
             Spacer(modifier = Modifier.height(Spacing.md))
+        }
+    }
+}
+
+// ─── Messages card ────────────────────────────────────────────────────────────
+
+@Composable
+private fun MessagesCard(
+    messages: List<com.psspl.autoreply.database.entity.DefaultMessageEntity>,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onMessageClick: (com.psspl.autoreply.database.entity.DefaultMessageEntity) -> Unit,
+    onClearAll: () -> Unit,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        // ── Header row ────────────────────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = Spacing.md, end = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Messages",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+
+            // Overflow menu
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "More options",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = if (expanded) "Hide Messages" else "Show Messages",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        },
+                        onClick = {
+                            onToggleExpand()
+                            menuExpanded = false
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Clear All",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        },
+                        onClick = {
+                            onClearAll()
+                            menuExpanded = false
+                        },
+                    )
+                }
+            }
+
+            // Expand / collapse icon
+            IconButton(onClick = onToggleExpand) {
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp
+                    else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Collapse messages" else "Expand messages",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        // ── Message list ──────────────────────────────────────────────────────
+        if (expanded) {
+            HorizontalDivider(modifier = Modifier.padding(horizontal = Spacing.md))
+            if (messages.isEmpty()) {
+                Text(
+                    text = "No messages",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                )
+            } else {
+                messages.forEachIndexed { index, message ->
+                    Text(
+                        text = message.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onMessageClick(message) }
+                            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                    )
+                    if (index < messages.lastIndex) {
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = Spacing.md))
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(Spacing.xs))
         }
     }
 }

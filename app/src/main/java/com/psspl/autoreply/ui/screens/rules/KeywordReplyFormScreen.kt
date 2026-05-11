@@ -279,6 +279,7 @@ private fun ChatPreview(
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
                     .align(Alignment.End),
+                contentAlignment = Alignment.TopEnd,
             ) {
                 Surface(
                     shape = RoundedCornerShape(

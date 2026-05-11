@@ -1,135 +1,144 @@
 # Current Task
 
-Goal:
-Implement Home Auto Reply configuration flow and Follow-Up Message module.
+## Feature
 
-Modules:
+Implement Default Messages section in Home/Dashboard screen.
 
-- Home screen auto-reply controls
-- Auto reply configuration screen
-- Follow-up message feature
-- Reply type selection integration
-- Shared reply timing integration
+Reference screenshots shared by user.
 
-Features:
+---
 
-1. Home Screen
-   Add/update:
+## Requirements
 
-- Auto reply enable/disable toggle
-- Auto reply text card
-- Sent messages statistics card
+### Home Screen Integration
+
+Add a new card section below advertisement banner.
+
+Section title:
+
+- Messages
+
+Top-right actions:
+
+1. Expand/Collapse icon
+2. Overflow menu
+
+Overflow menu options:
+
+- Show Messages
+- Clear All
+
+Use application's existing modern design system.
+
+---
+
+## Default Messages List
+
+Show predefined default auto-reply messages.
+
+Examples:
+
+- I am busy, text you later.
+- I am driving, text you later.
+- I am sleeping, text you later.
+- Can't talk now.
+- At the movie, text you later.
+- At work, text you later.
+- In a meeting, text you later.
+
+Use Room database.
+
+Create separate table/entity for default messages.
+
+Fields:
+
+- id
+- message
+- isDefault
+- createdAt
+- updatedAt
+
+---
+
+## Expand / Collapse
+
+Expand icon behavior:
+
+- Expanded:
+  show message list
+- Collapsed:
+  hide message list
+
+Persist state locally.
+
+---
+
+## Show Messages Action
+
+Popup menu action:
+
+- "Show Messages"
 
 Behavior:
 
-- Toggle enables/disables global auto reply
-- Auto reply text card opens configuration screen
-- Statistics card shows sent auto replies count
+- toggles visibility of message list
+- persist locally
 
-2. Auto Reply Configuration Screen
+---
 
-Features:
+## Clear All Action
 
-- Configure custom auto reply message
-- Support reply tags:
-    - name
-    - first name
-    - last name
-    - date
-    - time
-    - message
+Popup menu action:
 
-Reply Type Options:
-
-- Custom Message
-- Keyword Reply
-- Spreadsheet Reply
-- Menu Reply
-- AI Reply
-- Server Reply
+- "Clear All"
 
 Behavior:
 
-- Only one reply type selectable
-- Persist selected reply type
-- Persist custom message
-- Support reply tag insertion
+- delete all non-default messages only
+- preserve seeded default messages
 
-Navigation:
+Show confirmation dialog using application's custom dialog design system.
 
-- Reply Time -> existing common Reply Timing screen
-- Follow-Up Message -> Follow-Up screen
+---
 
-3. Follow-Up Message Module
+## Message Selection
 
-Features:
+On tapping any message:
 
-- Enable/disable follow-up
-- Configure follow-up message
-- Support reply tags
-- Define follow-up scope:
-    - all reply messages
-    - specific reply messages
-    - exclude reply messages
+- set selected message as active auto-reply text
+- update AutoReplyConfig/Home auto-reply message state
+- reflect immediately in Auto reply text section
 
-Manage reply messages:
+---
 
-- Add/manage included messages
-- Add/manage excluded messages
+## Persistence
 
-History:
+Seed default messages once during first launch.
 
-- Follow-up history screen placeholder/navigation
+Use repository pattern + Room + MVVM.
 
-Core Logic:
+---
 
-- Send follow-up only if recipient does not reply
-- Delay configurable
-- Follow-up linked with sent auto replies
-- Maintain sent/scheduled follow-up history
+## UI Requirements
 
-Database:
+Use:
 
-Create/update entities for:
+- Jetpack Compose
+- Material3
+- existing application theme/colors/components
 
-- home auto reply config
-- selected reply type
-- custom auto reply message
-- follow-up settings
-- follow-up history
-- follow-up include/exclude mappings
+Do NOT:
 
-Files:
+- use legacy XML
+- use bottom sheets
+- redesign unrelated screens
 
-UI:
+---
 
-- HomeScreen.kt
-- AutoReplyConfigurationScreen.kt
-- FollowUpMessageScreen.kt
+## Important
 
-ViewModel:
+Keep implementation modular and reusable.
 
-- HomeViewModel.kt
-- AutoReplyConfigurationViewModel.kt
-- FollowUpViewModel.kt
+Do not modify reply-engine logic.
 
-Database:
-
-- AutoReplyConfigEntity.kt
-- FollowUpConfigEntity.kt
-- FollowUpHistoryEntity.kt
-
-Repository:
-
-- AutoReplyRepository.kt
-- FollowUpRepository.kt
-
-Requirements:
-
-- Full screen implementation only
-- No bottom sheets
-- Reuse existing reply timing screen
-- Reuse shared design system/components
-- Maintain MVP-focused implementation
-- No backend integration
-- Keep implementation modular and reusable
+Only integrate dashboard/default-message functionality.

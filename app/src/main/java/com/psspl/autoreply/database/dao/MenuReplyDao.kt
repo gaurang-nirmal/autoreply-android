@@ -71,4 +71,22 @@ interface MenuReplyDao {
     /** Delete every reply row — items cascade-delete via FK */
     @Query("DELETE FROM menu_replies")
     suspend fun deleteAllReplies()
+
+    // ─── Engine queries (suspend, non-Flow) ───────────────────────────────────
+
+    /** All active trigger rows — used by MenuReplyEngine for incoming message matching. */
+    @Query("SELECT * FROM menu_replies WHERE is_active = 1 ORDER BY created_at DESC")
+    suspend fun getActiveRepliesOnce(): List<MenuReplyEntity>
+
+    /** Top-level items (no parent) for a trigger — sent as the initial menu. */
+    @Query("SELECT * FROM menu_reply_items WHERE menu_reply_id = :menuReplyId AND parent_item_id IS NULL ORDER BY position ASC")
+    suspend fun getTopLevelItemsOnce(menuReplyId: Int): List<MenuReplyItemEntity>
+
+    /** Direct children of a menu item — sent when a user navigates into a sub-menu. */
+    @Query("SELECT * FROM menu_reply_items WHERE parent_item_id = :parentItemId ORDER BY position ASC")
+    suspend fun getItemsByParentOnce(parentItemId: Int): List<MenuReplyItemEntity>
+
+    /** Single item lookup by id — used to resolve a selected item's metadata. */
+    @Query("SELECT * FROM menu_reply_items WHERE id = :id")
+    suspend fun getItemByIdOnce(id: Int): MenuReplyItemEntity?
 }

@@ -69,7 +69,7 @@ private val REPLY_TAGS = listOf(
 fun AutoReplyConfigScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    onNavigateToReplyTiming: () -> Unit = {},
+    onNavigateToReplyTiming: (replyTypeKey: String) -> Unit = {},
     onNavigateToFollowUp: () -> Unit = {},
     viewModel: AutoReplyConfigViewModel = hiltViewModel(),
 ) {
@@ -190,11 +190,13 @@ fun AutoReplyConfigScreen(
             HorizontalDivider()
 
             // ── Reply Time ─────────────────────────────────────────────────────
+            // Navigate to the timing screen for the *currently selected* reply type
+            // so Keyword/Menu/etc. each have their own independent timing config.
             ConfigSectionHeader(title = "Reply Time")
             ConfigNavRow(
                 title = "Reply Time",
                 subtitle = "Choose how often to send the auto-reply message",
-                onClick = onNavigateToReplyTiming,
+                onClick = { onNavigateToReplyTiming(selectedReplyType.name.lowercase()) },
             )
 
             HorizontalDivider()
