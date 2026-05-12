@@ -12,6 +12,7 @@ import com.psspl.autoreply.database.dao.MenuSessionDao
 import com.psspl.autoreply.database.dao.NoteDao
 import com.psspl.autoreply.database.dao.ReplyNotificationDao
 import com.psspl.autoreply.database.dao.ReplyTimingDao
+import com.psspl.autoreply.database.dao.SpreadsheetDao
 import com.psspl.autoreply.database.dao.SupportedAppDao
 import com.psspl.autoreply.database.dao.WelcomeMessageDao
 import com.psspl.autoreply.database.entity.AppSettingsEntity
@@ -28,6 +29,8 @@ import com.psspl.autoreply.database.entity.NoteEntity
 import com.psspl.autoreply.database.entity.ReplyLimitTrackingEntity
 import com.psspl.autoreply.database.entity.ReplyNotificationEntity
 import com.psspl.autoreply.database.entity.ReplyTimingConfigEntity
+import com.psspl.autoreply.database.entity.SpreadsheetEntity
+import com.psspl.autoreply.database.entity.SpreadsheetRuleEntity
 import com.psspl.autoreply.database.entity.SupportedAppEntity
 import com.psspl.autoreply.database.entity.WelcomeMessageConfigEntity
 import com.psspl.autoreply.database.entity.WelcomeMessageContactEntity
@@ -51,8 +54,10 @@ import com.psspl.autoreply.database.entity.WelcomeMessageContactEntity
         FollowUpHistoryEntity::class,
         FollowUpContactEntity::class,
         DefaultMessageEntity::class,
+        SpreadsheetEntity::class,
+        SpreadsheetRuleEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -68,4 +73,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun replyTimingDao(): ReplyTimingDao
     abstract fun followUpDao(): FollowUpDao
     abstract fun defaultMessageDao(): DefaultMessageDao
+    abstract fun spreadsheetDao(): SpreadsheetDao
 }

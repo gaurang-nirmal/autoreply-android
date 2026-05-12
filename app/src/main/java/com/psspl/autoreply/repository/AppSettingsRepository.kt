@@ -62,4 +62,38 @@ class AppSettingsRepository @Inject constructor(
         val current = dao.get() ?: AppSettingsEntity()
         dao.insert(current.copy(messagesExpanded = expanded))
     }
+
+    // ── Spreadsheet settings ──────────────────────────────────────────────────
+
+    val isSpreadsheetAutoSync: Flow<Boolean> =
+        dao.observe().map { it?.isSpreadsheetAutoSync ?: false }
+
+    val isSpreadsheetAutoSave: Flow<Boolean> =
+        dao.observe().map { it?.isSpreadsheetAutoSave ?: false }
+
+    val spreadsheetSaveSheetId: Flow<String> =
+        dao.observe().map { it?.spreadsheetSaveSheetId ?: "" }
+
+    val spreadsheetSyncIntervalHours: Flow<Int> =
+        dao.observe().map { it?.spreadsheetSyncIntervalHours ?: 24 }
+
+    suspend fun setSpreadsheetAutoSync(enabled: Boolean) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(isSpreadsheetAutoSync = enabled))
+    }
+
+    suspend fun setSpreadsheetAutoSave(enabled: Boolean) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(isSpreadsheetAutoSave = enabled))
+    }
+
+    suspend fun setSpreadsheetSaveSheetId(sheetId: String) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(spreadsheetSaveSheetId = sheetId))
+    }
+
+    suspend fun setSpreadsheetSyncIntervalHours(hours: Int) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(current.copy(spreadsheetSyncIntervalHours = hours))
+    }
 }

@@ -1,6 +1,8 @@
 package com.psspl.autoreply.di
 
 import com.psspl.autoreply.data.remote.AuthApiService
+import com.psspl.autoreply.data.remote.DriveApiService
+import com.psspl.autoreply.data.remote.SheetsApiService
 import com.psspl.autoreply.data.remote.interceptor.CurlLoggingInterceptor
 import com.psspl.autoreply.utils.AppConstants
 import com.psspl.autoreplyclone.BuildConfig
@@ -13,6 +15,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -56,4 +59,39 @@ object NetworkModule {
     @Singleton
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService =
         retrofit.create(AuthApiService::class.java)
+
+    // ── Google APIs (Sheets + Drive) ──────────────────────────────────────────
+    // Separate Retrofit instances are needed because the base URLs differ from
+    // the app backend. The Authorization header is passed per-call (Bearer token)
+    // so no dedicated interceptor is required here.
+
+    @Provides
+    @Singleton
+    @Named("SheetsRetrofit")
+    fun provideSheetsRetrofit(okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://sheets.googleapis.com/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+    @Provides
+    @Singleton
+    @Named("DriveRetrofit")
+    fun provideDriveRetrofit(okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://www.googleapis.com/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideSheetsApiService(@Named("SheetsRetrofit") retrofit: Retrofit): SheetsApiService =
+        retrofit.create(SheetsApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDriveApiService(@Named("DriveRetrofit") retrofit: Retrofit): DriveApiService =
+        retrofit.create(DriveApiService::class.java)
 }

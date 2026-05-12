@@ -96,6 +96,14 @@ dependencies {
     // Biometric / device credential authentication
     implementation(libs.biometric)
 
+    // WorkManager + Hilt integration (for spreadsheet auto-sync worker)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Google Play Services Auth (for requesting OAuth2 Sheets/Drive scopes)
+    implementation(libs.play.services.auth)
+
     // Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

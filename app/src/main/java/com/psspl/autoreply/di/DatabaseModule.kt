@@ -13,6 +13,7 @@ import com.psspl.autoreply.database.dao.MenuSessionDao
 import com.psspl.autoreply.database.dao.NoteDao
 import com.psspl.autoreply.database.dao.ReplyNotificationDao
 import com.psspl.autoreply.database.dao.ReplyTimingDao
+import com.psspl.autoreply.database.dao.SpreadsheetDao
 import com.psspl.autoreply.database.dao.SupportedAppDao
 import com.psspl.autoreply.database.dao.WelcomeMessageDao
 import dagger.Module
@@ -69,4 +70,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDefaultMessageDao(db: AppDatabase): DefaultMessageDao = db.defaultMessageDao()
+
+    @Provides
+    fun provideSpreadsheetDao(db: AppDatabase): SpreadsheetDao = db.spreadsheetDao()
 }

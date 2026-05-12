@@ -29,11 +29,15 @@ class SessionManager @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
     companion object {
-        private val KEY_JWT_TOKEN    = stringPreferencesKey("jwt_token")
-        private val KEY_USER_ID      = stringPreferencesKey("user_id")
+        private val KEY_JWT_TOKEN = stringPreferencesKey("jwt_token")
+        private val KEY_USER_ID = stringPreferencesKey("user_id")
         private val KEY_DISPLAY_NAME = stringPreferencesKey("display_name")
-        private val KEY_EMAIL        = stringPreferencesKey("email")
-        private val KEY_PHOTO_URL    = stringPreferencesKey("photo_url")
+        private val KEY_EMAIL = stringPreferencesKey("email")
+        private val KEY_PHOTO_URL = stringPreferencesKey("photo_url")
+
+        // Google OAuth2 token for Sheets / Drive API access
+        private val KEY_GOOGLE_ACCESS_TOKEN = stringPreferencesKey("google_access_token")
+        private val KEY_GOOGLE_TOKEN_EXPIRY = stringPreferencesKey("google_token_expiry")
     }
 
     /**
@@ -46,14 +50,14 @@ class SessionManager @Inject constructor(
     val currentUser: Flow<AuthUser?> = dataStore.data.map { prefs ->
         // A JWT must be present to consider the user authenticated.
         val jwt = prefs[KEY_JWT_TOKEN] ?: return@map null
-        val uid = prefs[KEY_USER_ID]   ?: return@map null
+        val uid = prefs[KEY_USER_ID] ?: return@map null
 
         @Suppress("UNUSED_VARIABLE")  // jwt validated above; not exposed in domain model
         AuthUser(
-            uid         = uid,
+            uid = uid,
             displayName = prefs[KEY_DISPLAY_NAME],
-            email       = prefs[KEY_EMAIL],
-            photoUrl    = prefs[KEY_PHOTO_URL],
+            email = prefs[KEY_EMAIL],
+            photoUrl = prefs[KEY_PHOTO_URL],
         )
     }
 
@@ -68,10 +72,10 @@ class SessionManager @Inject constructor(
     suspend fun saveAuthData(jwt: String, user: AuthUser) {
         dataStore.edit { prefs ->
             prefs[KEY_JWT_TOKEN] = jwt
-            prefs[KEY_USER_ID]   = user.uid
+            prefs[KEY_USER_ID] = user.uid
             if (user.displayName != null) prefs[KEY_DISPLAY_NAME] = user.displayName
-            if (user.email       != null) prefs[KEY_EMAIL]        = user.email
-            if (user.photoUrl    != null) prefs[KEY_PHOTO_URL]    = user.photoUrl
+            if (user.email != null) prefs[KEY_EMAIL] = user.email
+            if (user.photoUrl != null) prefs[KEY_PHOTO_URL] = user.photoUrl
         }
     }
 
@@ -90,4 +94,42 @@ class SessionManager @Inject constructor(
      */
     suspend fun getJwtToken(): String? =
         dataStore.data.map { it[KEY_JWT_TOKEN] }.first()
+
+    // ── Google OAuth2 (Sheets / Drive) ────────────────────────────────────────
+
+    /**
+     * Persists the Google OAuth2 access token and its expiry epoch-ms.
+     * Called after a successful [Identity.getAuthorizationClient] authorization.
+     */
+    suspend fun saveGoogleAccessToken(token: String, expiryMs: Long) {
+        dataStore.edit { prefs ->
+            prefs[KEY_GOOGLE_ACCESS_TOKEN] = token
+            prefs[KEY_GOOGLE_TOKEN_EXPIRY] = expiryMs.toString()
+        }
+    }
+
+    /**
+     * Returns the stored Google OAuth2 access token, or null if none saved.
+     * Check [isGoogleTokenValid] before using — expired tokens will be rejected by the API.
+     */
+    suspend fun getGoogleAccessToken(): String? =
+        dataStore.data.map { it[KEY_GOOGLE_ACCESS_TOKEN] }.first()
+
+    /**
+     * Returns true when the stored access token exists and has not yet expired.
+     * A 60-second buffer avoids using a token that expires during the API call.
+     */
+    suspend fun isGoogleTokenValid(): Boolean {
+        val expiry =
+            dataStore.data.map { it[KEY_GOOGLE_TOKEN_EXPIRY]?.toLongOrNull() ?: 0L }.first()
+        return expiry > System.currentTimeMillis() + 60_000L
+    }
+
+    /** Clears the stored Google OAuth2 token (e.g. on sign-out). */
+    suspend fun clearGoogleAccessToken() {
+        dataStore.edit { prefs ->
+            prefs.remove(KEY_GOOGLE_ACCESS_TOKEN)
+            prefs.remove(KEY_GOOGLE_TOKEN_EXPIRY)
+        }
+    }
 }

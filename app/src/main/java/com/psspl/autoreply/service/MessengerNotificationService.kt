@@ -17,6 +17,7 @@ import com.psspl.autoreply.engine.TimingDecision
 import com.psspl.autoreply.repository.AppSettingsRepository
 import com.psspl.autoreply.repository.KeywordRuleRepository
 import com.psspl.autoreply.repository.ReplyNotificationsRepository
+import com.psspl.autoreply.repository.SpreadsheetRepository
 import com.psspl.autoreply.repository.SupportedAppsRepository
 import com.psspl.autoreply.repository.WelcomeMessageRepository
 import com.psspl.autoreply.utils.AppLogger
@@ -58,11 +59,15 @@ class MessengerNotificationService : NotificationListenerService() {
     @Inject
     lateinit var welcomeMessageRepository: WelcomeMessageRepository
 
+    @Inject
+    lateinit var spreadsheetRepository: SpreadsheetRepository
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         private const val TAG = "MessengerNLS"
         private const val REPLY_TYPE_MENU = "menu"
+        private const val REPLY_TYPE_SPREADSHEET = "spreadsheet"
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -116,10 +121,18 @@ class MessengerNotificationService : NotificationListenerService() {
 
             // 4. Branch on active reply type
             val replyType = settings.replyType.lowercase()
-            if (replyType == REPLY_TYPE_MENU) {
-                handleMenuReply(sbn, appPackage, sender, message, contactKey)
-            } else {
-                handleKeywordReply(sbn, appPackage, sender, message, contactKey)
+            when (replyType) {
+                REPLY_TYPE_MENU -> handleMenuReply(sbn, appPackage, sender, message, contactKey)
+                REPLY_TYPE_SPREADSHEET -> handleSpreadsheetReply(
+                    sbn,
+                    appPackage,
+                    sender,
+                    message,
+                    contactKey,
+                    settings
+                )
+
+                else -> handleKeywordReply(sbn, appPackage, sender, message, contactKey)
             }
         }
     }
@@ -269,6 +282,88 @@ class MessengerNotificationService : NotificationListenerService() {
                 )
             )
             AppLogger.d(TAG, "Reply logged to history for $sender @ $appPackage")
+        }
+    }
+
+    // ─── Spreadsheet reply flow ───────────────────────────────────────────────
+
+    private suspend fun handleSpreadsheetReply(
+        sbn: StatusBarNotification,
+        appPackage: String,
+        sender: String,
+        message: String,
+        contactKey: String,
+        settings: com.psspl.autoreply.database.entity.AppSettingsEntity,
+    ) {
+        val rules = spreadsheetRepository.getAllRules()
+        if (rules.isEmpty()) {
+            AppLogger.d(TAG, "No spreadsheet rules cached — skipping spreadsheet reply")
+            return
+        }
+
+        AppLogger.d(TAG, "Checking ${rules.size} spreadsheet rule(s) against message: '$message'")
+
+        // Keyword matching: case-insensitive contains (sheets always use CONTAINS semantics)
+        val matched = rules.firstOrNull { rule ->
+            message.contains(rule.keyword.trim(), ignoreCase = true)
+        }
+
+        if (matched == null) {
+            AppLogger.d(TAG, "No spreadsheet keyword matched for: '$message'")
+            return
+        }
+
+        AppLogger.i(
+            TAG,
+            "Spreadsheet rule matched — keyword='${matched.keyword}' → reply='${matched.replyMessage}'"
+        )
+
+        // Resolve tags (same substitution as keyword reply)
+        val resolvedReply = resolveReplyText(
+            template = matched.replyMessage,
+            sender = sender,
+            message = message,
+        )
+
+        // Timing gate
+        when (val decision = replyTimingEvaluator.evaluate(contactKey)) {
+            is TimingDecision.Block -> {
+                AppLogger.d(TAG, "Timing gate blocked spreadsheet reply to $sender")
+                return
+            }
+
+            is TimingDecision.Delay -> {
+                AppLogger.d(TAG, "Timing gate: delaying spreadsheet reply ${decision.seconds}s")
+                delay(decision.seconds * 1_000L)
+            }
+
+            is TimingDecision.Allow -> { /* proceed */
+            }
+        }
+
+        val sent = sendDirectReply(sbn, resolvedReply)
+        if (sent) {
+            replyTimingEvaluator.recordReply(contactKey)
+            replyNotificationsRepository.insert(
+                ReplyNotificationEntity(
+                    appPackage = appPackage,
+                    senderName = sender,
+                    replyText = resolvedReply,
+                )
+            )
+            AppLogger.d(TAG, "Spreadsheet reply logged for $sender @ $appPackage")
+
+            // Auto-save reply to Google Sheet if enabled
+            val saveSheetId = settings.spreadsheetSaveSheetId
+            if (settings.isSpreadsheetAutoSave && saveSheetId.isNotEmpty()) {
+                spreadsheetRepository.saveReplyToSheet(
+                    spreadsheetId = saveSheetId,
+                    appPackage = appPackage,
+                    sender = sender,
+                    receivedMessage = message,
+                    replyText = resolvedReply,
+                )
+            }
         }
     }
 

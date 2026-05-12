@@ -1,3 +1,5 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package com.psspl.autoreply.navigation
 
 import androidx.compose.runtime.Composable
@@ -35,10 +37,17 @@ import com.psspl.autoreply.ui.screens.replytiming.ReplyTimingScreen
 import com.psspl.autoreply.ui.screens.rules.KeywordReplyFormScreen
 import com.psspl.autoreply.ui.screens.rules.RulesScreen
 import com.psspl.autoreply.ui.screens.settings.SettingsScreen
+import com.psspl.autoreply.ui.screens.spreadsheet.AddSpreadsheetScreen
+import com.psspl.autoreply.ui.screens.spreadsheet.SpreadsheetScreen
+import com.psspl.autoreply.ui.screens.spreadsheet.ViewSpreadsheetScreen
 import com.psspl.autoreply.ui.screens.supportedapps.SupportedAppsScreen
 import com.psspl.autoreply.ui.screens.upgrade.UpgradeScreen
 import com.psspl.autoreply.ui.screens.welcomemessage.WelcomeMessageEditScreen
 import com.psspl.autoreply.ui.screens.welcomemessage.WelcomeMessageScreen
+
+// URL encoding helpers for nav args that may contain special characters (sheet names)
+private inline fun String.encodeUrl(): String = java.net.URLEncoder.encode(this, "UTF-8")
+private inline fun String.decodeUrl(): String = java.net.URLDecoder.decode(this, "UTF-8")
 
 private const val ROUTE_REPLY_NOTIFICATIONS = "reply_notifications"
 private const val ROUTE_DIRECT_MESSAGE = "direct_message"
@@ -67,6 +76,9 @@ private const val ROUTE_AUTO_REPLY_CONFIG = "auto_reply_config"
 private const val ROUTE_FOLLOW_UP_MESSAGE = "follow_up_message"
 private const val ROUTE_FOLLOW_UP_HISTORY = "follow_up_history"
 private const val ROUTE_FOLLOW_UP_MANAGE = "follow_up_manage"
+private const val ROUTE_SPREADSHEET = "spreadsheet"
+private const val ROUTE_SPREADSHEET_ADD = "spreadsheet_add"
+private const val ROUTE_SPREADSHEET_VIEW = "spreadsheet_view"
 
 @Composable
 fun AppNavGraph(
@@ -120,6 +132,9 @@ fun AppNavGraph(
                 },
                 onNavigateToNotes = {
                     navController.navigate(ROUTE_NOTES)
+                },
+                onNavigateToSpreadsheet = {
+                    navController.navigate(ROUTE_SPREADSHEET)
                 },
             )
         }
@@ -376,6 +391,46 @@ fun AppNavGraph(
                 onNavigateToFollowUp = {
                     navController.navigate(ROUTE_FOLLOW_UP_MESSAGE)
                 },
+            )
+        }
+
+        // ── Spreadsheet ───────────────────────────────────────────────────────
+        composable(ROUTE_SPREADSHEET) {
+            SpreadsheetScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToAddSpreadsheet = {
+                    navController.navigate(ROUTE_SPREADSHEET_ADD)
+                },
+                onNavigateToViewSpreadsheet = { spreadsheetId, sheetName ->
+                    navController.navigate("$ROUTE_SPREADSHEET_VIEW/$spreadsheetId/${sheetName.encodeUrl()}")
+                },
+                onNavigateToReplyTiming = {
+                    navController.navigate("$ROUTE_REPLY_TIMING/spreadsheet")
+                },
+            )
+        }
+        composable(ROUTE_SPREADSHEET_ADD) {
+            AddSpreadsheetScreen(
+                onBack = { navController.popBackStack() },
+                onSheetLinked = {
+                    // Pop back to SpreadsheetScreen after linking
+                    navController.popBackStack(ROUTE_SPREADSHEET, inclusive = false)
+                },
+            )
+        }
+        composable(
+            route = "$ROUTE_SPREADSHEET_VIEW/{spreadsheetId}/{sheetName}",
+            arguments = listOf(
+                navArgument("spreadsheetId") { type = NavType.StringType },
+                navArgument("sheetName") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val spreadsheetId = backStackEntry.arguments?.getString("spreadsheetId") ?: ""
+            val sheetName = backStackEntry.arguments?.getString("sheetName")?.decodeUrl() ?: ""
+            ViewSpreadsheetScreen(
+                spreadsheetId = spreadsheetId,
+                sheetName = sheetName,
+                onBack = { navController.popBackStack() },
             )
         }
 
