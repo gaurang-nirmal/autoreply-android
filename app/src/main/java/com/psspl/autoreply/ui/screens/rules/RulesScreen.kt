@@ -293,7 +293,10 @@ fun RulesScreen(
                         .padding(Spacing.md),
                 )
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
                     items(
                         items = rules,
                         key = { it.id },

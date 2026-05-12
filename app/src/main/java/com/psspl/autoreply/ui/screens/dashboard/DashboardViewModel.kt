@@ -6,6 +6,7 @@ import com.psspl.autoreply.database.entity.DefaultMessageEntity
 import com.psspl.autoreply.repository.AppSettingsRepository
 import com.psspl.autoreply.repository.DefaultMessageRepository
 import com.psspl.autoreply.repository.ReplyNotificationsRepository
+import com.psspl.autoreply.repository.SupportedAppsRepository
 import com.psspl.autoreply.ui.screens.autoreplyconfig.ReplyType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,6 +22,7 @@ class DashboardViewModel @Inject constructor(
     private val appSettingsRepository: AppSettingsRepository,
     private val defaultMessageRepository: DefaultMessageRepository,
     replyNotificationsRepository: ReplyNotificationsRepository,
+    supportedAppsRepository: SupportedAppsRepository,
 ) : ViewModel() {
 
     init {
@@ -64,6 +66,14 @@ class DashboardViewModel @Inject constructor(
         )
 
     val sentRepliesCount = replyNotificationsRepository.allNotifications
+        .map { it.size }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0,
+        )
+
+    val enabledAppsCount = supportedAppsRepository.enabledApps
         .map { it.size }
         .stateIn(
             scope = viewModelScope,

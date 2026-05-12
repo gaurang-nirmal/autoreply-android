@@ -18,6 +18,7 @@ import com.psspl.autoreply.repository.AppSettingsRepository
 import com.psspl.autoreply.repository.KeywordRuleRepository
 import com.psspl.autoreply.repository.ReplyNotificationsRepository
 import com.psspl.autoreply.repository.SupportedAppsRepository
+import com.psspl.autoreply.repository.WelcomeMessageRepository
 import com.psspl.autoreply.utils.AppLogger
 import com.psspl.autoreply.utils.MatchType
 import dagger.hilt.android.AndroidEntryPoint
@@ -54,6 +55,9 @@ class MessengerNotificationService : NotificationListenerService() {
     @Inject
     lateinit var menuReplyEngine: MenuReplyEngine
 
+    @Inject
+    lateinit var welcomeMessageRepository: WelcomeMessageRepository
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
@@ -78,7 +82,7 @@ class MessengerNotificationService : NotificationListenerService() {
             return
         }
 
-        AppLogger.d(TAG, "Notification posted — pkg=$appPackage | sender=$sender | msg=$message")
+        logNotificationDetails(sbn, sender, message)
 
         serviceScope.launch {
             // 1. Global module toggle gate
@@ -95,14 +99,52 @@ class MessengerNotificationService : NotificationListenerService() {
             }
 
             val contactKey = "$appPackage:${sender.trim().lowercase()}"
-            val replyType = settings.replyType.lowercase()
 
-            // 3. Branch on active reply type
+            // 3. Welcome message — highest priority, checked before any other reply type
+            val welcomeConfig = welcomeMessageRepository.getConfig().first()
+            if (welcomeConfig != null && welcomeConfig.isEnabled) {
+                if (welcomeMessageRepository.shouldSendWelcome(
+                        appPackage,
+                        contactKey,
+                        welcomeConfig.cooldownDays
+                    )
+                ) {
+                    handleWelcomeMessage(sbn, appPackage, sender, contactKey, welcomeConfig.message)
+                    return@launch
+                }
+            }
+
+            // 4. Branch on active reply type
+            val replyType = settings.replyType.lowercase()
             if (replyType == REPLY_TYPE_MENU) {
                 handleMenuReply(sbn, appPackage, sender, message, contactKey)
             } else {
                 handleKeywordReply(sbn, appPackage, sender, message, contactKey)
             }
+        }
+    }
+
+    // ─── Welcome message flow ─────────────────────────────────────────────────
+
+    private suspend fun handleWelcomeMessage(
+        sbn: StatusBarNotification,
+        appPackage: String,
+        sender: String,
+        contactKey: String,
+        message: String,
+    ) {
+        AppLogger.d(TAG, "Welcome message — sending to $sender ($contactKey)")
+        val sent = sendDirectReply(sbn, message)
+        if (sent) {
+            welcomeMessageRepository.recordWelcomeSent(appPackage, contactKey)
+            replyNotificationsRepository.insert(
+                ReplyNotificationEntity(
+                    appPackage = appPackage,
+                    senderName = sender,
+                    replyText = message,
+                )
+            )
+            AppLogger.d(TAG, "Welcome message sent and logged for $sender @ $appPackage")
         }
     }
 
@@ -297,22 +339,135 @@ class MessengerNotificationService : NotificationListenerService() {
         val replyIntent = Intent()
         val bundle = Bundle()
         remoteInputs.forEach { ri -> bundle.putCharSequence(ri.resultKey, replyText) }
+
+        // Mark reply as free-form keyboard input — some apps check this field (API 28+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            RemoteInput.setResultsSource(replyIntent, RemoteInput.SOURCE_FREE_FORM_INPUT)
+        }
         RemoteInput.addResultsToIntent(remoteInputs, replyIntent, bundle)
+
+        // Guard 1 — FLAG_IMMUTABLE (Android 12+):
+        // If the target app set FLAG_IMMUTABLE on the PendingIntent, Android silently
+        // discards our fillIn intent. The send() still returns without exception but
+        // the reply text is never delivered. Detected for apps like LinkedIn/Instagram.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && replyAction.actionIntent.isImmutable) {
+            AppLogger.e(TAG, "━━━ DIRECT REPLY BLOCKED (FLAG_IMMUTABLE) ━━━━━━━━━━━━━━━━━━━━")
+            AppLogger.e(TAG, "  Package : ${sbn.packageName}")
+            AppLogger.e(
+                TAG,
+                "  Reason  : PendingIntent is FLAG_IMMUTABLE — fill intent discarded by OS"
+            )
+            AppLogger.e(TAG, "  Fix     : Accessibility Service required for this app")
+            AppLogger.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            return false
+        }
 
         return try {
             replyAction.actionIntent.send(this, 0, replyIntent)
-            AppLogger.i(TAG, "Direct reply sent: '$replyText'")
+            AppLogger.i(TAG, "Direct reply dispatched to ${sbn.packageName} — text='$replyText'")
+            AppLogger.d(TAG, "  Note: send() returning true means the PendingIntent fired,")
+            AppLogger.d(TAG, "  not that the message was delivered. If the app uses an")
+            AppLogger.d(TAG, "  Activity PendingIntent, Android 10+ blocks it silently from")
+            AppLogger.d(TAG, "  background — Accessibility Service is required in that case.")
             true
         } catch (e: PendingIntent.CanceledException) {
-            AppLogger.e(TAG, "Reply PendingIntent was cancelled: ${e.message}")
+            AppLogger.e(
+                TAG,
+                "Reply PendingIntent was cancelled — notification may be stale: ${e.message}"
+            )
+            false
+        } catch (e: SecurityException) {
+            AppLogger.e(TAG, "━━━ DIRECT REPLY BLOCKED (SecurityException) ━━━━━━━━━━━━━━━━━━")
+            AppLogger.e(TAG, "  Package : ${sbn.packageName}")
+            AppLogger.e(TAG, "  Reason  : ${e.message}")
+            AppLogger.e(TAG, "  Fix     : Accessibility Service required for this app")
+            AppLogger.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             false
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to send reply: ${e.message}")
+            AppLogger.e(TAG, "Failed to send reply to ${sbn.packageName}: ${e.message}")
             false
         }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    private fun logNotificationDetails(
+        sbn: StatusBarNotification,
+        sender: String,
+        message: String,
+    ) {
+        val n = sbn.notification
+        val extras = n.extras
+
+        // Basic identity
+        AppLogger.d(TAG, "━━━ Notification Detected ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        AppLogger.d(TAG, "  Package   : ${sbn.packageName}")
+        AppLogger.d(TAG, "  Notif ID  : ${sbn.id}")
+        AppLogger.d(TAG, "  Key       : ${sbn.key}")
+        AppLogger.d(
+            TAG,
+            "  Post time : ${
+                java.text.SimpleDateFormat(
+                    "HH:mm:ss.SSS",
+                    java.util.Locale.getDefault()
+                ).format(java.util.Date(sbn.postTime))
+            }"
+        )
+
+        // Content
+        AppLogger.d(TAG, "  Sender    : $sender")
+        AppLogger.d(TAG, "  Message   : $message")
+        extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.let {
+            AppLogger.d(TAG, "  Sub-text  : $it")
+        }
+        extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.let {
+            AppLogger.d(TAG, "  Summary   : $it")
+        }
+
+        // Notification metadata
+        AppLogger.d(TAG, "  Category  : ${n.category ?: "none"}")
+        AppLogger.d(TAG, "  Priority  : ${n.priority}")
+        AppLogger.d(TAG, "  Flags     : 0x${n.flags.toString(16)} ${decodeFlagNames(n.flags)}")
+        AppLogger.d(TAG, "  Group key : ${n.group ?: "none"}")
+        n.tickerText?.let { AppLogger.d(TAG, "  Ticker    : $it") }
+
+        // Actions & reply capability
+        val actions = n.actions
+        if (actions.isNullOrEmpty()) {
+            AppLogger.d(TAG, "  Actions   : none — direct reply NOT possible")
+        } else {
+            AppLogger.d(TAG, "  Actions   : ${actions.size} available")
+            actions.forEachIndexed { i, action ->
+                val hasRemoteInput = action.remoteInputs?.isNotEmpty() == true
+                val semanticTag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    " semantic=${action.semanticAction}"
+                } else ""
+                val replyTag = if (hasRemoteInput) " [REPLY-CAPABLE]" else ""
+                AppLogger.d(TAG, "    [$i] '${action.title}'$semanticTag$replyTag")
+                action.remoteInputs?.forEach { ri ->
+                    AppLogger.d(
+                        TAG,
+                        "        RemoteInput key='${ri.resultKey}' label='${ri.label}'"
+                    )
+                }
+            }
+            val canReply = actions.any { it.remoteInputs?.isNotEmpty() == true }
+            AppLogger.d(TAG, "  Can reply : $canReply")
+        }
+        AppLogger.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    private fun decodeFlagNames(flags: Int): String {
+        val names = buildList {
+            if (flags and Notification.FLAG_SHOW_LIGHTS != 0) add("SHOW_LIGHTS")
+            if (flags and Notification.FLAG_ONGOING_EVENT != 0) add("ONGOING")
+            if (flags and Notification.FLAG_AUTO_CANCEL != 0) add("AUTO_CANCEL")
+            if (flags and Notification.FLAG_NO_CLEAR != 0) add("NO_CLEAR")
+            if (flags and Notification.FLAG_FOREGROUND_SERVICE != 0) add("FOREGROUND_SERVICE")
+            if (flags and Notification.FLAG_GROUP_SUMMARY != 0) add("GROUP_SUMMARY")
+        }
+        return if (names.isEmpty()) "(none)" else "(${names.joinToString("|")})"
+    }
 
     private fun logActions(actions: Array<Notification.Action>) {
         actions.forEachIndexed { i, action ->

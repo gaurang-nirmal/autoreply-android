@@ -1,5 +1,7 @@
 package com.psspl.autoreply.ui.screens.dashboard
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,16 +41,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.psspl.autoreply.ui.components.AppCard
 import com.psspl.autoreply.ui.components.AppTopBar
@@ -71,15 +79,18 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val unreadCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle()
     val isAutoReplyEnabled by viewModel.isAutoReplyEnabled.collectAsStateWithLifecycle()
     val autoReplyMessage by viewModel.autoReplyMessage.collectAsStateWithLifecycle()
     val selectedReplyType by viewModel.selectedReplyType.collectAsStateWithLifecycle()
     val sentRepliesCount by viewModel.sentRepliesCount.collectAsStateWithLifecycle()
+    val enabledAppsCount by viewModel.enabledAppsCount.collectAsStateWithLifecycle()
     val defaultMessages by viewModel.defaultMessages.collectAsStateWithLifecycle()
     val messagesExpanded by viewModel.messagesExpanded.collectAsStateWithLifecycle()
 
     var showClearAllDialog by remember { mutableStateOf(false) }
+    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
 
     if (showClearAllDialog) {
         ConfirmationDialog(
@@ -90,6 +101,36 @@ fun DashboardScreen(
             onConfirm = { viewModel.clearCustomMessages() },
             onDismiss = { showClearAllDialog = false },
         )
+    }
+
+    if (showNotificationPermissionDialog) {
+        ConfirmationDialog(
+            title = "Notification Access Required",
+            message = "Auto Reply needs Notification Access permission to read incoming messages and send automatic replies.\n\nWithout this permission, the Auto Reply feature cannot function.",
+            confirmLabel = "Open Settings",
+            dismissLabel = "Not Now",
+            onConfirm = {
+                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            },
+            onDismiss = { showNotificationPermissionDialog = false },
+        )
+    }
+
+    // Disable the toggle whenever the user revokes Notification Access from Android settings
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val hasPermission = NotificationManagerCompat
+                    .getEnabledListenerPackages(context)
+                    .contains(context.packageName)
+                if (!hasPermission) {
+                    viewModel.toggleAutoReply(false)
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Scaffold(
@@ -193,7 +234,20 @@ fun DashboardScreen(
                     }
                     Switch(
                         checked = isAutoReplyEnabled,
-                        onCheckedChange = { viewModel.toggleAutoReply(it) },
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                val hasPermission = NotificationManagerCompat
+                                    .getEnabledListenerPackages(context)
+                                    .contains(context.packageName)
+                                if (hasPermission) {
+                                    viewModel.toggleAutoReply(true)
+                                } else {
+                                    showNotificationPermissionDialog = true
+                                }
+                            } else {
+                                viewModel.toggleAutoReply(false)
+                            }
+                        },
                     )
                 }
             }
@@ -272,7 +326,7 @@ fun DashboardScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
-                        text = "0",
+                        text = enabledAppsCount.toString(),
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )

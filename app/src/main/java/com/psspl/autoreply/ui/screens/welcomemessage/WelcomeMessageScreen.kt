@@ -18,7 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -99,7 +99,7 @@ fun WelcomeMessageScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
 
-            // ── Star icon header ───────────────────────────────────────────────
+            // ── Feature icon header ────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,7 +112,7 @@ fun WelcomeMessageScreen(
                     modifier = Modifier.size(88.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Star,
+                        imageVector = Icons.Filled.EmojiEmotions,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
