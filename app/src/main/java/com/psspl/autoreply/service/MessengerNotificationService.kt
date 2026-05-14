@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.google.gson.JsonParser
 import com.psspl.autoreply.data.network.ApiService
 import com.psspl.autoreply.data.network.model.AiReplyRequest
 import com.psspl.autoreply.database.entity.KeywordRuleEntity
@@ -32,10 +33,15 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Named
 
 @AndroidEntryPoint
 class MessengerNotificationService : NotificationListenerService() {
@@ -67,6 +73,10 @@ class MessengerNotificationService : NotificationListenerService() {
     @Inject
     lateinit var apiService: ApiService
 
+    @Inject
+    @Named("Plain")
+    lateinit var plainOkHttpClient: OkHttpClient
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
@@ -74,6 +84,7 @@ class MessengerNotificationService : NotificationListenerService() {
         private const val REPLY_TYPE_MENU = "menu"
         private const val REPLY_TYPE_SPREADSHEET = "spreadsheet"
         private const val REPLY_TYPE_AI = "ai_reply"
+        private const val REPLY_TYPE_SERVER = "server"
 
         // AI config is stored under appId=1 (global config set from Menu screen).
         // Change this when per-app AI configs are supported.
@@ -143,6 +154,7 @@ class MessengerNotificationService : NotificationListenerService() {
                 )
 
                 REPLY_TYPE_AI -> handleAiReply(sbn, appPackage, sender, message, contactKey)
+                REPLY_TYPE_SERVER -> handleServerReply(sbn, appPackage, sender, message, contactKey)
                 else -> handleKeywordReply(sbn, appPackage, sender, message, contactKey)
             }
         }
@@ -308,6 +320,104 @@ class MessengerNotificationService : NotificationListenerService() {
                 )
             )
             AppLogger.d(TAG, "AI reply sent and logged for $sender @ $appPackage")
+        }
+    }
+
+    // ─── Server reply flow ────────────────────────────────────────────────────
+
+    private suspend fun handleServerReply(
+        sbn: StatusBarNotification,
+        appPackage: String,
+        sender: String,
+        message: String,
+        contactKey: String,
+    ) {
+        val settings = appSettingsRepository.get() ?: return
+        val url = settings.serverReplyUrl.trim()
+
+        if (url.isBlank()) {
+            AppLogger.w(TAG, "Server reply URL not configured — skipping")
+            return
+        }
+
+        AppLogger.d(TAG, "Server reply mode — calling $url for '$message' from $sender")
+
+        when (val decision = replyTimingEvaluator.evaluate(contactKey)) {
+            is TimingDecision.Block -> {
+                AppLogger.d(TAG, "Timing gate blocked server reply to $sender")
+                return
+            }
+
+            is TimingDecision.Delay -> {
+                AppLogger.d(
+                    TAG,
+                    "Timing gate: delaying server reply ${decision.seconds}s for $sender"
+                )
+                delay(decision.seconds * 1_000L)
+            }
+
+            is TimingDecision.Allow -> { /* proceed immediately */
+            }
+        }
+
+        val serverReply = try {
+            val json = """{"app":"$appPackage","sender":"${
+                sender.replace(
+                    "\"",
+                    "\\\""
+                )
+            }","message":"${message.replace("\"", "\\\"")}","group_name":"","phone":""}"""
+            val body = json.toRequestBody("application/json".toMediaType())
+            val requestBuilder = Request.Builder()
+                .url(url)
+                .post(body)
+                .header("Content-Type", "application/json")
+
+            if (settings.serverReplyHeaderName.isNotBlank()) {
+                requestBuilder.header(
+                    settings.serverReplyHeaderName.trim(),
+                    settings.serverReplyHeaderValue.trim(),
+                )
+            }
+
+            val response = plainOkHttpClient.newCall(requestBuilder.build()).execute()
+            val responseBody = response.body?.string() ?: ""
+
+            if (!response.isSuccessful) {
+                AppLogger.w(TAG, "Server reply returned HTTP ${response.code} — skipping")
+                null
+            } else {
+                runCatching {
+                    JsonParser.parseString(responseBody)
+                        .asJsonObject
+                        .get("reply")
+                        ?.takeIf { !it.isJsonNull }
+                        ?.asString
+                }.getOrNull()
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Server reply network error: ${e.message}")
+            null
+        }
+
+        if (serverReply.isNullOrBlank()) {
+            AppLogger.w(TAG, "Server reply was empty or null — not sending")
+            return
+        }
+
+        AppLogger.i(TAG, "Server reply received — sending: '$serverReply'")
+
+        val sent = sendDirectReply(sbn, serverReply)
+        if (sent) {
+            replyTimingEvaluator.recordReply(contactKey)
+            replyNotificationsRepository.insert(
+                ReplyNotificationEntity(
+                    appPackage = appPackage,
+                    senderName = sender,
+                    replyText = serverReply,
+                )
+            )
+            AppLogger.d(TAG, "Server reply sent and logged for $sender @ $appPackage")
         }
     }
 

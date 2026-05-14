@@ -1,72 +1,53 @@
-# Reply Engine Rules
+# Reply Engine Skill
 
-Goal:
-Centralize auto-reply execution behavior.
+## Current Reply Types (ReplyType enum)
 
-Reply Types:
+```
+CUSTOM      → handleKeywordReply() — sends settings.autoReplyMessage as-is
+KEYWORD     → handleKeywordReply() — matches KeywordRuleEntity against message
+SPREADSHEET → handleSpreadsheetReply() — matches SpreadsheetRuleEntity
+MENU        → handleMenuReply() via MenuReplyEngine (state machine)
+AI_REPLY    → handleAiReply() via ApiService.getAiReply() (app backend)
+SERVER      → handleServerReply() via user-configured URL (OkHttp direct call)
+```
 
-- Custom Message
-- Keyword Reply
-- Spreadsheet Reply
-- Menu Reply
-- AI Reply
-- Server Reply
+## Adding a New Reply Type
 
-Execution Flow:
+1. Add enum value to `ReplyType.kt`
+2. Add `when` branch in `MessengerNotificationService.onNotificationPosted()`
+3. Implement `handleXxxReply()` private suspend fun in the service
+4. Apply timing gate + record reply after successful send
+5. Add config screen + DB columns if needed
 
-1. Detect active reply type
-2. Load reply type configuration
-3. Evaluate timing rules
-4. Evaluate reply limits
-5. Evaluate contact restrictions
-6. Execute reply
+## Timing Gate (mandatory for all handlers)
 
-Timing Modes:
+```kotlin
+when (val decision = replyTimingEvaluator.evaluate(contactKey)) {
+    is TimingDecision.Block → return
+    is TimingDecision.Delay → delay(decision.seconds * 1_000L)
+    is TimingDecision.Allow → { /* proceed */ }
+}
+// after successful send:
+replyTimingEvaluator.recordReply(contactKey)
+replyNotificationsRepository.insert(ReplyNotificationEntity(...))
+```
 
-1. Reply Every Time
+## Tag Substitution (resolveReplyText)
 
-- Reply immediately for every incoming message
+Available in keyword + spreadsheet handlers:
+`{name}`, `{first_name}`, `{last_name}`, `{date}`, `{time}`, `{message}`
 
-2. Reply And Wait
+## Timing Modes (ReplyTimingScreen — shared by all types, keyed by replyType string)
 
-- Reply once
-- Pause replies for configured duration
-- Resume after wait duration expires
+1. Reply Every Time — no gate
+2. Reply And Wait — reply once, pause for N duration
+3. Reply After Delay — delay N seconds before sending
+4. Reply Once — one reply per contact session
 
-3. Reply After Delay
+## Architecture Rules
 
-- Delay reply execution
-- Send after configured duration
-
-4. Reply Once
-
-- Reply only one time per chat/session
-- Ignore further messages until reset
-
-Reply Limits:
-
-- Optional per-contact reply limit
-- Stop replying after max replies reached
-
-Reply Limit List:
-
-- Maintain per-contact reply counters
-
-Rules:
-
-- Active reply type controls execution
-- AutoReplyConfigScreen acts as centralized selector
-- Shared Reply Time screen must be reused
-- No duplicate timing implementations
-
-Architecture:
-
-- Keep timing evaluation centralized
-- Avoid duplicated reply execution logic
-- Prefer reusable evaluators/resolvers
-
-Suggested Components:
-
-- ActiveReplyConfigResolver
-- ReplyTimingEvaluator
-- ReplyLimitEvaluator
+- Timing evaluation is centralized in `ReplyTimingEvaluator`
+- No reply logic in ViewModels or UI layer
+- Each reply type gets its own private handler in the service
+- Welcome message always takes priority over the active reply type
+- contactKey format: `"$packageName:${sender.trim().lowercase()}"`

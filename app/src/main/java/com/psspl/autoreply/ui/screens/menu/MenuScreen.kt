@@ -40,6 +40,7 @@ fun MenuScreen(
     onNavigateToNotes: () -> Unit = {},
     onNavigateToSpreadsheet: () -> Unit = {},
     onNavigateToAiReply: () -> Unit = {},
+    onNavigateToServerReply: () -> Unit = {},
     viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -120,6 +121,7 @@ fun MenuScreen(
                             "Notes" -> onNavigateToNotes()
                             "Spreadsheet" -> onNavigateToSpreadsheet()
                             "AI Reply" -> onNavigateToAiReply()
+                            "Server" -> onNavigateToServerReply()
                             else -> Toast.makeText(
                                 context,
                                 "${feature.title} — coming soon",

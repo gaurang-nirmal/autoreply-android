@@ -55,6 +55,17 @@ data class AppSettingsEntity(
     @ColumnInfo(name = "spreadsheet_save_sheet_id")
     val spreadsheetSaveSheetId: String = "",
 
+    // ── Server Reply settings ─────────────────────────────────────────────────
+
+    @ColumnInfo(name = "server_reply_url")
+    val serverReplyUrl: String = "",
+
+    @ColumnInfo(name = "server_reply_header_name")
+    val serverReplyHeaderName: String = "",
+
+    @ColumnInfo(name = "server_reply_header_value")
+    val serverReplyHeaderValue: String = "",
+
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long = System.currentTimeMillis()
 )

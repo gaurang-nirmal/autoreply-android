@@ -20,8 +20,8 @@
         <domain includeSubdomains="false">localhost</domain>
     </domain-config>
 
-    <!-- All other traffic (production) must use HTTPS -->
-    <base-config cleartextTrafficPermitted="false">
+    <!-- Cleartext allowed globally — users may configure http:// server endpoints -->
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

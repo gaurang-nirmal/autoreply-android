@@ -1,144 +1,240 @@
-# Current Task
+# Current Task: Server Reply Feature
 
-## Feature
+## Goal
 
-Implement Default Messages section in Home/Dashboard screen.
+Allow users to configure their own server endpoint. When a notification arrives and reply type is
+SERVER,
+the app POSTs the message details to the user's URL and sends the server's response back as the
+reply.
 
-Reference screenshots shared by user.
+## Reference
 
----
+Screenshots shared by user showing:
 
-## Requirements
-
-### Home Screen Integration
-
-Add a new card section below advertisement banner.
-
-Section title:
-
-- Messages
-
-Top-right actions:
-
-1. Expand/Collapse icon
-2. Overflow menu
-
-Overflow menu options:
-
-- Show Messages
-- Clear All
-
-Use application's existing modern design system.
+- "Server" screen (accessible from MenuScreen → "Server" card)
+- Top bar: back arrow + "Server" title + "SAVE" action
+- Server URL input with hint "Example: https://example.com/message.php"
+- Header (Optional) — two side-by-side fields: "name" | "value"
+- Read-only info card: Request Parameters (URL, Method=POST, Type=JSON, Request Body fields,
+  Response Body format)
+- Full-width teal "SEND TEST REQUEST" button
+- "HOW IT WORKS?" text link → opens dialog explaining the 3-step flow
 
 ---
 
-## Default Messages List
+## Screens / Files to Create
 
-Show predefined default auto-reply messages.
+### `ui/screens/serverreply/ServerReplyViewModel.kt`
 
-Examples:
+State class:
 
-- I am busy, text you later.
-- I am driving, text you later.
-- I am sleeping, text you later.
-- Can't talk now.
-- At the movie, text you later.
-- At work, text you later.
-- In a meeting, text you later.
+```kotlin
+data class ServerReplyUiState(
+    val url: String = "",
+    val headerName: String = "",
+    val headerValue: String = "",
+    val isSaving: Boolean = false,
+    val isTesting: Boolean = false,
+    val testResult: String? = null,   // success message or error text
+    val testResultIsError: Boolean = false,
+    val saveSuccess: Boolean = false,
+    val error: String? = null,
+    val showHowItWorksDialog: Boolean = false,
+)
+```
 
-Use Room database.
+ViewModel loads from AppSettingsRepository on init. Save writes back. Test makes live HTTP call.
 
-Create separate table/entity for default messages.
+### `ui/screens/serverreply/ServerReplyScreen.kt`
 
-Fields:
+UI layout (top to bottom):
 
-- id
-- message
-- isDefault
-- createdAt
-- updatedAt
+1. AppTopBar — title "Server", back icon, SAVE action
+2. Server icon (teal circle, `Icons.Filled.Cloud` or similar)
+3. Short description text: "Configure your server URL to get a reply for incoming messages."
+4. Server URL — `OutlinedTextField`, full width, hint: "Example: https://example.com/message.php"
+5. "Header (Optional)" label
+6. Two side-by-side `OutlinedTextField` — "name" | "value" (weight 1f each, Row)
+7. "Request parameters" info card (AppCard, read-only, monospace-style content):
+   ```
+   URL:    https://example.com/message.php
+   Method: POST
+   Type:   JSON
+   ──────────────────────────
+   Request Body
+   {
+     "app": name of the incoming message app,
+     "sender": sender name of the incoming message,
+     "message": message content,
+     "group_name": group name of the incoming message,
+     "phone": phone number of the sender from your contact list
+   }
+   ──────────────────────────
+   Response Body
+   {
+     "reply": Reply message from the server
+   }
+   ```
+8. Bottom row: `AppButton("SEND TEST REQUEST", fullWidth)` | `TextButton("HOW IT WORKS?")`
+9. "How it works?" dialog (AppAlertDialog) when showHowItWorksDialog=true:
+    - Title: "How it works ?"
+    - Body:
+        1. AutoReply will send an incoming message from your messaging app to your configured server
+           URL.
+        2. Once your server responds back with the reply message, AutoReply will send it to your
+           messaging app.
+        3. That's it!! Simple isn't it?
+    - "DONE" button dismisses
 
----
-
-## Expand / Collapse
-
-Expand icon behavior:
-
-- Expanded:
-  show message list
-- Collapsed:
-  hide message list
-
-Persist state locally.
-
----
-
-## Show Messages Action
-
-Popup menu action:
-
-- "Show Messages"
-
-Behavior:
-
-- toggles visibility of message list
-- persist locally
-
----
-
-## Clear All Action
-
-Popup menu action:
-
-- "Clear All"
-
-Behavior:
-
-- delete all non-default messages only
-- preserve seeded default messages
-
-Show confirmation dialog using application's custom dialog design system.
-
----
-
-## Message Selection
-
-On tapping any message:
-
-- set selected message as active auto-reply text
-- update AutoReplyConfig/Home auto-reply message state
-- reflect immediately in Auto reply text section
+Test result feedback: Snackbar (success in green tint, error in error color).
 
 ---
 
-## Persistence
+## Files to Modify
 
-Seed default messages once during first launch.
+### 1. `database/entity/AppSettingsEntity.kt`
 
-Use repository pattern + Room + MVVM.
+Add 3 new columns:
+
+```kotlin
+@ColumnInfo(name = "server_reply_url")
+val serverReplyUrl: String = "",
+
+@ColumnInfo(name = "server_reply_header_name")
+val serverReplyHeaderName: String = "",
+
+@ColumnInfo(name = "server_reply_header_value")
+val serverReplyHeaderValue: String = "",
+```
+
+### 2. `database/AppDatabase.kt`
+
+Bump version: `14` → `15`
+
+### 3. `repository/AppSettingsRepository.kt`
+
+Add:
+
+```kotlin
+val serverReplyUrl: Flow<String> = dao.observe().map { it?.serverReplyUrl ?: "" }
+val serverReplyHeaderName: Flow<String> = dao.observe().map { it?.serverReplyHeaderName ?: "" }
+val serverReplyHeaderValue: Flow<String> = dao.observe().map { it?.serverReplyHeaderValue ?: "" }
+
+suspend fun setServerReplyConfig(url: String, headerName: String, headerValue: String) {
+    val current = dao.get() ?: AppSettingsEntity()
+    dao.insert(current.copy(serverReplyUrl = url, serverReplyHeaderName = headerName, serverReplyHeaderValue = headerValue))
+}
+```
+
+### 4. `di/NetworkModule.kt`
+
+Add plain OkHttpClient (no auth interceptor) for user-server calls:
+
+```kotlin
+@Provides
+@Singleton
+@Named("Plain")
+fun providePlainOkHttpClient(): OkHttpClient =
+    OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .build()
+```
+
+### 5. `service/MessengerNotificationService.kt`
+
+- Inject `@Named("Plain") OkHttpClient` as `plainOkHttpClient`
+- Add `REPLY_TYPE_SERVER = "server"` constant
+- Add branch: `REPLY_TYPE_SERVER -> handleServerReply(sbn, appPackage, sender, message, contactKey)`
+- Implement `handleServerReply()`:
+    - Load settings, check url not empty
+    - Apply timing gate
+    - Build POST request:
+        - URL: settings.serverReplyUrl
+        - Body (JSON):
+          `{"app": appPackage, "sender": sender, "message": message, "group_name": "", "phone": ""}`
+        - If headerName not blank: add as request header
+    - Execute synchronously (already on Dispatchers.IO)
+    - Parse response JSON: extract `"reply"` field using Gson JsonParser
+    - If reply blank/null → log and return
+    - sendDirectReply() → log + record
+
+### 6. `ui/screens/menu/MenuScreen.kt`
+
+- Add `onNavigateToServerReply: () -> Unit = {}` parameter
+- Add case: `"Server" -> onNavigateToServerReply()`
+
+### 7. `navigation/AppNavGraph.kt`
+
+- Add import for `ServerReplyScreen`
+- Add constant: `private const val ROUTE_SERVER_REPLY = "server_reply"`
+- Add route in NavHost
+- Wire in MenuScreen composable call
 
 ---
 
-## UI Requirements
+## Request / Response Contract
 
-Use:
+### POST to user's server
 
-- Jetpack Compose
-- Material3
-- existing application theme/colors/components
+```json
+{
+  "app": "com.whatsapp",
+  "sender": "John Doe",
+  "message": "Hi, is this available?",
+  "group_name": "",
+  "phone": ""
+}
+```
 
-Do NOT:
+Headers: `Content-Type: application/json` + optional custom header from config
 
-- use legacy XML
-- use bottom sheets
-- redesign unrelated screens
+### Expected response (HTTP 200)
+
+```json
+{
+  "reply": "Yes, it is available!"
+}
+```
+
+Non-200 or missing "reply" field → skip sending, log warning.
+
+### Test Request (SEND TEST REQUEST button)
+
+Same POST call but with dummy values:
+
+```json
+{
+  "app": "test",
+  "sender": "Test User",
+  "message": "This is a test message",
+  "group_name": "",
+  "phone": ""
+}
+```
+
+Show Snackbar with: success → `"Server replied: <reply text>"` | error → `"Test failed: <reason>"`
 
 ---
 
-## Important
+## Execution Checklist (do in order)
 
-Keep implementation modular and reusable.
+- [ ] Add columns to `AppSettingsEntity` + bump DB version to 15
+- [ ] Add `setServerReplyConfig()` to `AppSettingsRepository`
+- [ ] Add `@Named("Plain") OkHttpClient` to `NetworkModule`
+- [ ] Create `ServerReplyViewModel.kt`
+- [ ] Create `ServerReplyScreen.kt`
+- [ ] Add `handleServerReply()` to `MessengerNotificationService` + inject plain client
+- [ ] Update `MenuScreen` with `onNavigateToServerReply`
+- [ ] Update `AppNavGraph` with route + wiring
 
-Do not modify reply-engine logic.
+## Important Notes
 
-Only integrate dashboard/default-message functionality.
+- Do NOT use the app backend `ApiService` for server reply calls — this is a direct call to the
+  user's URL
+- Use synchronous OkHttp `execute()` since the service runs on Dispatchers.IO
+- Gson is already available — use `JsonParser.parseString(body).asJsonObject.get("reply").asString`
+- Guard null/JsonNull when parsing the reply field
+- AppSettingsEntity uses `Insert(REPLACE)` upsert — always do `dao.get() ?: AppSettingsEntity()`
+  then `.copy()`

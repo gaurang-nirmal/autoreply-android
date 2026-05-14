@@ -10,7 +10,8 @@
       "PowerShell(Get-ChildItem -Path \"D:\\\\C Drive 2\\\\AndroidApps\\\\AndroidDemos\\\\2026\\\\AutoReply-Android\\\\app\\\\src\\\\main\\\\java\" -Recurse -File | Where-Object {$_.Extension -eq \".kt\"} | Select-Object -ExpandProperty FullName | Sort-Object)",
       "Bash(npx tsc *)",
       "Bash(npm install *)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(find \"D:\\\\C Drive 2\\\\BackEndApps\\\\node_projects\\\\auto-reply-backend\\\\backend\\\\prisma\" -type f | sort)"
     ]
   }
 }

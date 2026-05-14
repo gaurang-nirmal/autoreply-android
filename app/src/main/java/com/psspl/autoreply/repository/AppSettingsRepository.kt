@@ -96,4 +96,26 @@ class AppSettingsRepository @Inject constructor(
         val current = dao.get() ?: AppSettingsEntity()
         dao.insert(current.copy(spreadsheetSyncIntervalHours = hours))
     }
+
+    // ── Server Reply settings ─────────────────────────────────────────────────
+
+    val serverReplyUrl: Flow<String> =
+        dao.observe().map { it?.serverReplyUrl ?: "" }
+
+    val serverReplyHeaderName: Flow<String> =
+        dao.observe().map { it?.serverReplyHeaderName ?: "" }
+
+    val serverReplyHeaderValue: Flow<String> =
+        dao.observe().map { it?.serverReplyHeaderValue ?: "" }
+
+    suspend fun setServerReplyConfig(url: String, headerName: String, headerValue: String) {
+        val current = dao.get() ?: AppSettingsEntity()
+        dao.insert(
+            current.copy(
+                serverReplyUrl = url,
+                serverReplyHeaderName = headerName,
+                serverReplyHeaderValue = headerValue,
+            )
+        )
+    }
 }

@@ -1,72 +1,152 @@
-# Mobile Architecture
+# Architecture — AutoReply Android
 
-Architecture:
+## Pattern
 
-- MVVM
-- Repository Pattern
-- Single Activity Architecture
-- Jetpack Compose Navigation
+- MVVM + Repository Pattern
+- Single Activity (`MainActivity`) + Jetpack Compose Navigation
+- Hilt for DI throughout
 
-Layers:
+## Real Package Structure (com.psspl.autoreply)
 
-1. UI Layer
-2. ViewModel Layer
-3. Domain Layer
-4. Repository Layer
-5. Data Layer
+```
+com.psspl.autoreply/
+├── AutoReplyApp.kt              # Application class (Hilt)
+├── MainActivity.kt              # Single activity entry point
+├── MainViewModel.kt             # Theme mode + app lock state
 
-Core Android Components:
-
-- Accessibility Service
-- Notification Listener Service
-- Room Database
-- WorkManager
-- Hilt DI
-
-Folder Structure:
-
-app/
-├── ui/
-├── viewmodel/
-├── domain/
 ├── data/
-├── repository/
-├── service/
+│   ├── auth/                    # Google auth (AuthRepository, GoogleCredentialProvider)
+│   │   └── model/               # AuthResult, AuthUser
+│   ├── network/                 # App backend
+│   │   ├── ApiService.kt        # Retrofit interface (AI, training prompts)
+│   │   └── model/               # AiReplyRequest/Response, AiConfigModels, etc.
+│   ├── remote/                  # Google APIs
+│   │   ├── SheetsApiService.kt
+│   │   ├── DriveApiService.kt
+│   │   ├── AuthApiService.kt
+│   │   ├── interceptor/         # AuthInterceptor, CurlLoggingInterceptor
+│   │   └── model/               # Google API request/response models
+│   └── repository/              # AI config repository (AiConfigRepository)
+
 ├── database/
-├── model/
-├── parser/
-├── automation/
-├── supportedapps/
-└── utils/
+│   ├── AppDatabase.kt           # Room DB, version=14, fallbackToDestructiveMigration
+│   ├── dao/                     # One DAO per entity
+│   └── entity/                  # Room entities (see CLAUDE.md entity table)
 
-Architecture Goal:
-Keep implementation scalable and app-agnostic.
+├── di/
+│   ├── AppModule.kt             # (currently empty, for future use)
+│   ├── AuthModule.kt            # DataStore + AuthRepository binding
+│   ├── DatabaseModule.kt        # Room + all DAO providers
+│   └── NetworkModule.kt         # OkHttpClient, Retrofit, ApiService, SheetsRetrofit, DriveRetrofit
 
-Notification Flow:
-Incoming Notification
-→ Notification Listener
-→ App Detection
-→ Message Parser
-→ Rule Engine
-→ Reply Execution
+├── engine/
+│   ├── MenuReplyEngine.kt       # Menu reply conversation state machine
+│   └── ReplyTimingEvaluator.kt  # Timing/limit gate (shared by all reply types)
 
-Reply Execution Priority:
+├── navigation/
+│   ├── AppNavGraph.kt           # All composable routes
+│   ├── AppBottomNavBar.kt       # Bottom navigation bar
+│   └── BottomNavItem.kt         # Bottom nav tab definitions
 
-1. Notification direct reply (RemoteInput)
-2. Accessibility automation fallback
+├── repository/
+│   ├── AppSettingsRepository.kt
+│   ├── KeywordRuleRepository.kt
+│   ├── MenuReplyRepository.kt
+│   ├── SpreadsheetRepository.kt  # Google Sheets sync + rule cache
+│   ├── ReplyNotificationsRepository.kt
+│   ├── ReplyTimingRepository.kt
+│   ├── WelcomeMessageRepository.kt
+│   ├── DefaultMessageRepository.kt
+│   ├── DirectMessageRepository.kt
+│   ├── FollowUpRepository.kt
+│   └── NoteRepository.kt
 
-Recommended Structure:
+├── service/
+│   ├── MessengerNotificationService.kt  # NotificationListenerService — core reply dispatch
+│   └── SpreadsheetSyncWorker.kt         # WorkManager worker for background sheet sync
 
-supportedapps/
-├── whatsapp/
-├── telegram/
-├── messenger/
-├── instagram/
-└── common/
+├── ui/
+│   ├── auth/                    # AuthViewModel, AuthState
+│   ├── components/              # Shared composables (AppTopBar, AppCard, AppButton, etc.)
+│   ├── theme/                   # Color, Type, Shape, Spacing
+│   └── screens/
+│       ├── ai/                  # AiReplyScreen, AiSettingsScreen, AiParametersScreen, TrainAiScreen, AiTextPromptScreen
+│       ├── appsecurity/         # AppSecurityScreen
+│       ├── automaticon/         # AutomaticOnScreen
+│       ├── autoreplyconfig/     # AutoReplyConfigScreen, AutoReplyConfigViewModel, ReplyType enum
+│       ├── backuprestore/       # BackupRestoreScreen
+│       ├── dashboard/           # DashboardScreen, DashboardViewModel
+│       ├── directmessage/       # DirectMessageScreen
+│       ├── display/             # DisplayScreen (theme selector)
+│       ├── followup/            # FollowUpMessageScreen, FollowUpHistoryScreen, FollowUpManageScreen
+│       ├── help/                # HelpScreen
+│       ├── invitefriend/        # InviteFriendScreen
+│       ├── login/               # LoginScreen, LoginViewModel
+│       ├── menu/                # MenuScreen (feature grid), MenuViewModel
+│       ├── menureply/           # MenuReplyScreen, AddEditMenuReplyScreen, children/more options
+│       ├── notes/               # NotesScreen, NoteEditorScreen
+│       ├── notworking/          # NotWorkingScreen
+│       ├── replyheaderfooter/   # ReplyHeaderFooterScreen
+│       ├── replynotifications/  # ReplyNotificationsScreen (reply history)
+│       ├── replytime/           # ReplyTimeScreen
+│       ├── replytiming/         # ReplyTimingScreen, ReplyLimitListScreen, ReplyMode enum
+│       ├── rules/               # RulesScreen, KeywordReplyFormScreen
+│       ├── serverreply/         # [PLANNED] ServerReplyScreen, ServerReplyViewModel
+│       ├── settings/            # SettingsScreen
+│       ├── spreadsheet/         # SpreadsheetScreen, AddSpreadsheetScreen, ViewSpreadsheetScreen
+│       ├── supportedapps/       # SupportedAppsScreen
+│       ├── upgrade/             # UpgradeScreen
+│       └── welcomemessage/      # WelcomeMessageScreen, WelcomeMessageEditScreen
 
-Each app module should contain:
+├── backup/
+│   ├── KeywordRuleBackupManager.kt
+│   └── MenuReplyBackupManager.kt
 
-- Notification parser
-- Automation handler
-- Package identifiers
-- Selector strategy
+└── utils/                       # AppLogger, AppConstants, AppLockManager, ThemeMode, MatchType, etc.
+```
+
+## Notification Reply Flow (detailed)
+
+```
+onNotificationPosted(sbn)
+  │
+  ├─ extract: sender = EXTRA_TITLE, message = EXTRA_TEXT
+  ├─ gate 1: isAutoReplyEnabled == true
+  ├─ gate 2: supportedAppsRepository.isAppEnabled(packageName)
+  ├─ contactKey = "$packageName:${sender.trim().lowercase()}"
+  │
+  ├─ welcome check (highest priority):
+  │    welcomeConfig.isEnabled && shouldSendWelcome(contactKey)
+  │    → handleWelcomeMessage() → sendDirectReply() → return
+  │
+  └─ branch on settings.replyType.lowercase():
+       "menu"        → handleMenuReply()
+       "spreadsheet" → handleSpreadsheetReply()
+       "ai_reply"    → handleAiReply()       ← calls ApiService
+       "server"      → handleServerReply()   ← calls user's URL via OkHttp
+       else          → handleKeywordReply()  ← covers CUSTOM + KEYWORD
+```
+
+## Timing Gate (all reply types apply this)
+
+```kotlin
+when (replyTimingEvaluator.evaluate(contactKey)) {
+    is TimingDecision.Block → return (skip reply)
+    is TimingDecision.Delay → delay(decision.seconds * 1000L)
+    is TimingDecision.Allow → proceed
+}
+// after successful send:
+replyTimingEvaluator.recordReply(contactKey)
+```
+
+## DI Graph Summary
+
+```
+SingletonComponent
+├── DatabaseModule    → AppDatabase → all DAOs → all Repositories
+├── NetworkModule     → OkHttpClient → Retrofit → ApiService
+│                     → @Named("Plain") OkHttpClient (no auth, for user server calls)
+│                     → @Named("SheetsRetrofit") → SheetsApiService
+│                     → @Named("DriveRetrofit") → DriveApiService
+└── AuthModule        → DataStore → AuthRepository
+```

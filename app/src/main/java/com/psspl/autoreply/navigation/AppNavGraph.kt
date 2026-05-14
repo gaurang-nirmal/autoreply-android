@@ -41,6 +41,7 @@ import com.psspl.autoreply.ui.screens.replytiming.ReplyLimitListScreen
 import com.psspl.autoreply.ui.screens.replytiming.ReplyTimingScreen
 import com.psspl.autoreply.ui.screens.rules.KeywordReplyFormScreen
 import com.psspl.autoreply.ui.screens.rules.RulesScreen
+import com.psspl.autoreply.ui.screens.serverreply.ServerReplyScreen
 import com.psspl.autoreply.ui.screens.settings.SettingsScreen
 import com.psspl.autoreply.ui.screens.spreadsheet.AddSpreadsheetScreen
 import com.psspl.autoreply.ui.screens.spreadsheet.SpreadsheetScreen
@@ -81,6 +82,7 @@ private const val ROUTE_AUTO_REPLY_CONFIG = "auto_reply_config"
 private const val ROUTE_FOLLOW_UP_MESSAGE = "follow_up_message"
 private const val ROUTE_FOLLOW_UP_HISTORY = "follow_up_history"
 private const val ROUTE_FOLLOW_UP_MANAGE = "follow_up_manage"
+private const val ROUTE_SERVER_REPLY = "server_reply"
 private const val ROUTE_SPREADSHEET = "spreadsheet"
 private const val ROUTE_SPREADSHEET_ADD = "spreadsheet_add"
 private const val ROUTE_SPREADSHEET_VIEW = "spreadsheet_view"
@@ -159,6 +161,9 @@ fun AppNavGraph(
                 },
                 onNavigateToAiReply = {
                     navController.navigate(AppRoutes.aiReply())
+                },
+                onNavigateToServerReply = {
+                    navController.navigate(ROUTE_SERVER_REPLY)
                 },
             )
         }
@@ -416,6 +421,11 @@ fun AppNavGraph(
                     navController.navigate(ROUTE_FOLLOW_UP_MESSAGE)
                 },
             )
+        }
+
+        // ── Server Reply ──────────────────────────────────────────────────────
+        composable(ROUTE_SERVER_REPLY) {
+            ServerReplyScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Spreadsheet ───────────────────────────────────────────────────────
