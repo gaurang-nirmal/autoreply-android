@@ -1,7 +1,7 @@
 package com.psspl.autoreply.utils
 
 object AppConstants {
-    const val APP_NAME     = "AutoReply"
+    const val APP_NAME = "AutoReply"
     const val MAX_FREE_APPS = 2
 
     /**
@@ -22,5 +22,5 @@ object AppConstants {
      * ⚠️ http:// (cleartext) is only allowed in debug builds via the
      *    network security config. Switch to https:// for production.
      */
-    const val BASE_URL = "http://192.168.10.36:3000/"   // real device → PC on local Wi-Fi
+    const val BASE_URL = "http://192.168.10.58:3000/"   // real device → PC on local Wi-Fi
 }

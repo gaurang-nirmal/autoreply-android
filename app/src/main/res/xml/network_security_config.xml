@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
     Network Security Configuration
     Allows cleartext HTTP traffic to localhost aliases used during local development.
     Production traffic must go through HTTPS only.
@@ -17,7 +16,7 @@
         <!-- Android emulator → host machine's localhost -->
         <domain includeSubdomains="false">10.0.2.2</domain>
         <!-- Real device → PC's LAN IP (update if your IP changes) -->
-        <domain includeSubdomains="false">192.168.10.36</domain>
+        <domain includeSubdomains="false">192.168.10.58</domain>
         <domain includeSubdomains="false">localhost</domain>
     </domain-config>
 

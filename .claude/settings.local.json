@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\C Drive 2\\\\BackEndApps\\\\node_projects\\\\auto-reply-backend\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(find \"D:\\\\C Drive 2\\\\BackEndApps\\\\node_projects\\\\auto-reply-backend\" -maxdepth 2 -type f | head -30)",
+      "Bash(Get-ChildItem -Path \"D:\\\\C Drive 2\\\\AndroidApps\\\\AndroidDemos\\\\2026\\\\AutoReply-Android\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\C Drive 2\\\\AndroidApps\\\\AndroidDemos\\\\2026\\\\AutoReply-Android\\\\app\\\\src\\\\main\\\\java\" -Recurse -File | Where-Object {$_.Extension -eq \".kt\"} | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)"
+    ]
+  }
+}

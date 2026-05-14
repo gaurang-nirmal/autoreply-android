@@ -9,6 +9,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.psspl.autoreply.ui.screens.ai.AiParametersScreen
+import com.psspl.autoreply.ui.screens.ai.AiReplyScreen
+import com.psspl.autoreply.ui.screens.ai.AiSettingsScreen
+import com.psspl.autoreply.ui.screens.ai.AiTextPromptScreen
+import com.psspl.autoreply.ui.screens.ai.TrainAiScreen
 import com.psspl.autoreply.ui.screens.appsecurity.AppSecurityScreen
 import com.psspl.autoreply.ui.screens.automaticon.AutomaticOnScreen
 import com.psspl.autoreply.ui.screens.autoreplyconfig.AutoReplyConfigScreen
@@ -80,6 +85,22 @@ private const val ROUTE_SPREADSHEET = "spreadsheet"
 private const val ROUTE_SPREADSHEET_ADD = "spreadsheet_add"
 private const val ROUTE_SPREADSHEET_VIEW = "spreadsheet_view"
 
+object AppRoutes {
+    const val AI_REPLY = "ai_reply/{appId}"
+    fun aiReply(appId: Int = 1) = "ai_reply/$appId"
+
+    const val TRAIN_AI = "train_ai/{appId}"
+    const val AI_SETTINGS = "ai_settings/{appId}"
+    const val AI_PARAMETERS = "ai_parameters/{appId}"
+    const val TRAIN_AI_PROMPT = "train_ai_prompt/{appId}?promptId={promptId}"
+
+    fun trainAi(appId: Int = 1) = "train_ai/$appId"
+    fun aiSettings(appId: Int = 1) = "ai_settings/$appId"
+    fun aiParameters(appId: Int = 1) = "ai_parameters/$appId"
+    fun addPrompt(appId: Int = 1) = "train_ai_prompt/$appId"
+    fun editPrompt(appId: Int = 1, promptId: String) = "train_ai_prompt/$appId?promptId=$promptId"
+}
+
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -135,6 +156,9 @@ fun AppNavGraph(
                 },
                 onNavigateToSpreadsheet = {
                     navController.navigate(ROUTE_SPREADSHEET)
+                },
+                onNavigateToAiReply = {
+                    navController.navigate(AppRoutes.aiReply())
                 },
             )
         }
@@ -451,6 +475,81 @@ fun AppNavGraph(
         }
         composable(ROUTE_FOLLOW_UP_MANAGE) {
             FollowUpManageScreen(onBack = { navController.popBackStack() })
+        }
+
+        // ── AI screens ────────────────────────────────────────────────────────
+        composable(
+            route = AppRoutes.AI_REPLY,
+            arguments = listOf(navArgument("appId") { type = NavType.IntType }),
+        ) { backStackEntry ->
+            val appId = backStackEntry.arguments?.getInt("appId") ?: 1
+            AiReplyScreen(
+                appId = appId,
+                onBack = { navController.popBackStack() },
+                onNavigateToTrainAi = { navController.navigate(AppRoutes.trainAi(appId)) },
+                onNavigateToAiSettings = { navController.navigate(AppRoutes.aiSettings(appId)) },
+                onNavigateToAiParameters = { navController.navigate(AppRoutes.aiParameters(appId)) },
+            )
+        }
+
+        composable(
+            route = AppRoutes.AI_SETTINGS,
+            arguments = listOf(navArgument("appId") { type = NavType.IntType }),
+        ) { backStackEntry ->
+            val appId = backStackEntry.arguments?.getInt("appId") ?: 1
+            AiSettingsScreen(
+                appId = appId,
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = AppRoutes.TRAIN_AI,
+            arguments = listOf(navArgument("appId") { type = NavType.IntType }),
+        ) { backStackEntry ->
+            val appId = backStackEntry.arguments?.getInt("appId") ?: 1
+            TrainAiScreen(
+                appId = appId,
+                onBack = { navController.popBackStack() },
+                onNavigateToAddPrompt = { navController.navigate(AppRoutes.addPrompt(appId)) },
+                onNavigateToEditPrompt = { promptId ->
+                    navController.navigate(
+                        AppRoutes.editPrompt(
+                            appId,
+                            promptId
+                        )
+                    )
+                },
+            )
+        }
+
+        composable(
+            route = AppRoutes.AI_PARAMETERS,
+            arguments = listOf(navArgument("appId") { type = NavType.IntType }),
+        ) { backStackEntry ->
+            val appId = backStackEntry.arguments?.getInt("appId") ?: 1
+            AiParametersScreen(
+                appId = appId,
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(
+            route = AppRoutes.TRAIN_AI_PROMPT,
+            arguments = listOf(
+                navArgument("appId") { type = NavType.IntType },
+                navArgument("promptId") {
+                    type = NavType.StringType; nullable = true; defaultValue = null
+                },
+            ),
+        ) { backStackEntry ->
+            val appId = backStackEntry.arguments?.getInt("appId") ?: 1
+            val promptId = backStackEntry.arguments?.getString("promptId")
+            AiTextPromptScreen(
+                appId = appId,
+                promptId = promptId,
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 }

@@ -30,6 +30,7 @@ class SessionManager @Inject constructor(
 ) {
     companion object {
         private val KEY_JWT_TOKEN = stringPreferencesKey("jwt_token")
+        private val KEY_REFRESH_TOKEN = stringPreferencesKey("refresh_token")
         private val KEY_USER_ID = stringPreferencesKey("user_id")
         private val KEY_DISPLAY_NAME = stringPreferencesKey("display_name")
         private val KEY_EMAIL = stringPreferencesKey("email")
@@ -69,15 +70,28 @@ class SessionManager @Inject constructor(
      * Triggers a [currentUser] emission which drives the UI to the
      * authenticated state.
      */
-    suspend fun saveAuthData(jwt: String, user: AuthUser) {
+    suspend fun saveAuthData(jwt: String, refreshToken: String, user: AuthUser) {
         dataStore.edit { prefs ->
             prefs[KEY_JWT_TOKEN] = jwt
+            prefs[KEY_REFRESH_TOKEN] = refreshToken
             prefs[KEY_USER_ID] = user.uid
             if (user.displayName != null) prefs[KEY_DISPLAY_NAME] = user.displayName
             if (user.email != null) prefs[KEY_EMAIL] = user.email
             if (user.photoUrl != null) prefs[KEY_PHOTO_URL] = user.photoUrl
         }
     }
+
+    /** Overwrites both tokens after a silent refresh — does not touch user profile. */
+    suspend fun saveTokens(accessToken: String, refreshToken: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_JWT_TOKEN] = accessToken
+            prefs[KEY_REFRESH_TOKEN] = refreshToken
+        }
+    }
+
+    /** One-shot read of the stored refresh token. */
+    suspend fun getRefreshToken(): String? =
+        dataStore.data.map { it[KEY_REFRESH_TOKEN] }.first()
 
     /**
      * Wipes all auth data.

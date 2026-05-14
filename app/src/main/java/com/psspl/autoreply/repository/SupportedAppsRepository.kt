@@ -19,6 +19,10 @@ class SupportedAppsRepository @Inject constructor(
     suspend fun isAppEnabled(appPackage: String): Boolean =
         dao.getByPackage(appPackage)?.isEnabled == true
 
+    /** Returns the local app ID for a given package name, or null if not found. */
+    suspend fun getAppIdByPackage(appPackage: String): Int? =
+        dao.getByPackage(appPackage)?.id
+
     suspend fun seedDefaultApps(defaults: List<SupportedAppEntity>) {
         dao.insertAll(defaults)
     }

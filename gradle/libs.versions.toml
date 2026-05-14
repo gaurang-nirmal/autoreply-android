@@ -70,7 +70,7 @@ biometric = { group = "androidx.biometric", name = "biometric", version.ref = "b
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
 hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltWork" }
-# Google Play Services Auth (for OAuth2 scope authorization)
+# Google Play Services Auth (for requesting OAuth2 Sheets/Drive scopes)
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 
 [plugins]

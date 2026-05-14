@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.psspl.autoreply.data.network.ApiService
+import com.psspl.autoreply.data.network.model.AiReplyRequest
 import com.psspl.autoreply.database.entity.KeywordRuleEntity
 import com.psspl.autoreply.database.entity.ReplyNotificationEntity
 import com.psspl.autoreply.engine.MenuEngineResult
@@ -62,12 +64,20 @@ class MessengerNotificationService : NotificationListenerService() {
     @Inject
     lateinit var spreadsheetRepository: SpreadsheetRepository
 
+    @Inject
+    lateinit var apiService: ApiService
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         private const val TAG = "MessengerNLS"
         private const val REPLY_TYPE_MENU = "menu"
         private const val REPLY_TYPE_SPREADSHEET = "spreadsheet"
+        private const val REPLY_TYPE_AI = "ai_reply"
+
+        // AI config is stored under appId=1 (global config set from Menu screen).
+        // Change this when per-app AI configs are supported.
+        private const val AI_CONFIG_APP_ID = 1
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -132,6 +142,7 @@ class MessengerNotificationService : NotificationListenerService() {
                     settings
                 )
 
+                REPLY_TYPE_AI -> handleAiReply(sbn, appPackage, sender, message, contactKey)
                 else -> handleKeywordReply(sbn, appPackage, sender, message, contactKey)
             }
         }
@@ -214,6 +225,89 @@ class MessengerNotificationService : NotificationListenerService() {
                 )
             )
             AppLogger.d(TAG, "Menu reply sent and logged for $sender @ $appPackage")
+        }
+    }
+
+    // ─── AI reply flow ────────────────────────────────────────────────────────
+
+    private suspend fun handleAiReply(
+        sbn: StatusBarNotification,
+        appPackage: String,
+        sender: String,
+        message: String,
+        contactKey: String,
+    ) {
+        AppLogger.d(TAG, "AI reply mode — requesting reply for '$message' from $sender")
+
+        // MVP: single AI config saved under appId=1 from the Menu screen.
+        // contactId already encodes the package name so history is per-contact.
+        val appId = AI_CONFIG_APP_ID
+
+        // Timing gate before making the network call
+        when (val decision = replyTimingEvaluator.evaluate(contactKey)) {
+            is TimingDecision.Block -> {
+                AppLogger.d(TAG, "Timing gate blocked AI reply to $sender")
+                return
+            }
+
+            is TimingDecision.Delay -> {
+                AppLogger.d(TAG, "Timing gate: delaying AI reply ${decision.seconds}s for $sender")
+                delay(decision.seconds * 1_000L)
+            }
+
+            is TimingDecision.Allow -> { /* proceed immediately */
+            }
+        }
+
+        val aiReply = try {
+            val response = apiService.getAiReply(
+                AiReplyRequest(
+                    appId = appId,
+                    contactId = contactKey,
+                    contactName = sender,
+                    incomingMessage = message,
+                    includeHistory = true,
+                )
+            )
+            if (response.isSuccessful) {
+                response.body()?.reply
+            } else {
+                val errorBody = response.errorBody()?.string() ?: ""
+                AppLogger.w(
+                    TAG,
+                    "AI reply API returned ${response.code()} for appId=$appId — $errorBody"
+                )
+                if (response.code() == 404) {
+                    AppLogger.w(
+                        TAG,
+                        "AI reply: no config for appId=$appId. Set up AI settings in the app first."
+                    )
+                }
+                null
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "AI reply network error: ${e.message}")
+            null
+        }
+
+        if (aiReply.isNullOrBlank()) {
+            AppLogger.w(TAG, "AI reply was empty or null — not sending")
+            return
+        }
+
+        AppLogger.i(TAG, "AI reply received — sending: '$aiReply'")
+
+        val sent = sendDirectReply(sbn, aiReply)
+        if (sent) {
+            replyTimingEvaluator.recordReply(contactKey)
+            replyNotificationsRepository.insert(
+                ReplyNotificationEntity(
+                    appPackage = appPackage,
+                    senderName = sender,
+                    replyText = aiReply,
+                )
+            )
+            AppLogger.d(TAG, "AI reply sent and logged for $sender @ $appPackage")
         }
     }
 

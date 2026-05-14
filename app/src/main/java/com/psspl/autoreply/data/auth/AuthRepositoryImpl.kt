@@ -77,22 +77,26 @@ class AuthRepositoryImpl @Inject constructor(
 
             // ── Step 3: Persist JWT + user profile (NOT the Google token) ─
             val user = response.user.toAuthUser()
-            sessionManager.saveAuthData(jwt = response.accessToken, user = user)
+            sessionManager.saveAuthData(
+                jwt = response.accessToken,
+                refreshToken = response.refreshToken,
+                user = user,
+            )
 
             AuthResult.Success(user)
 
         } catch (e: HttpException) {
             val message = when (e.code()) {
-                401  -> "Authentication rejected by server. Please try again."
-                403  -> "Access denied. Contact support if this persists."
-                500  -> "Server error. Please try again later."
+                401 -> "Authentication rejected by server. Please try again."
+                403 -> "Access denied. Contact support if this persists."
+                500 -> "Server error. Please try again later."
                 else -> "Sign-in failed (HTTP ${e.code()}). Please try again."
             }
             AuthResult.Error(message = message, cause = e)
         } catch (e: IOException) {
             AuthResult.Error(
                 message = "No internet connection. Please check your network and try again.",
-                cause   = e,
+                cause = e,
             )
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "An unexpected error occurred.", cause = e)

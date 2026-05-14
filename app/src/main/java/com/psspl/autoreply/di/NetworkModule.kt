@@ -1,8 +1,10 @@
 package com.psspl.autoreply.di
 
+import com.psspl.autoreply.data.network.ApiService
 import com.psspl.autoreply.data.remote.AuthApiService
 import com.psspl.autoreply.data.remote.DriveApiService
 import com.psspl.autoreply.data.remote.SheetsApiService
+import com.psspl.autoreply.data.remote.interceptor.AuthInterceptor
 import com.psspl.autoreply.data.remote.interceptor.CurlLoggingInterceptor
 import com.psspl.autoreply.utils.AppConstants
 import com.psspl.autoreplyclone.BuildConfig
@@ -24,12 +26,12 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) {
-                HttpLoggingInterceptor.Level.BODY   // full request/response in debug
+                HttpLoggingInterceptor.Level.BODY
             } else {
-                HttpLoggingInterceptor.Level.NONE   // no logging in production
+                HttpLoggingInterceptor.Level.NONE
             }
         }
 
@@ -37,6 +39,7 @@ object NetworkModule {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(authInterceptor)   // attaches Bearer token when signed in
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(CurlLoggingInterceptor())
@@ -59,6 +62,11 @@ object NetworkModule {
     @Singleton
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService =
         retrofit.create(AuthApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideApiService(retrofit: Retrofit): ApiService =
+        retrofit.create(ApiService::class.java)
 
     // ── Google APIs (Sheets + Drive) ──────────────────────────────────────────
     // Separate Retrofit instances are needed because the base URLs differ from
