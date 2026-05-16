@@ -19,6 +19,9 @@ interface ReplyNotificationDao {
     @Query("SELECT COUNT(*) FROM reply_notifications WHERE timestamp > :since")
     fun countUnread(since: Long): Flow<Int>
 
+    @Query("SELECT * FROM reply_notifications WHERE reply_text = :replyText ORDER BY timestamp DESC")
+    fun getByReplyText(replyText: String): Flow<List<ReplyNotificationEntity>>
+
     @Query("DELETE FROM reply_notifications")
     suspend fun deleteAll()
 }

@@ -14,6 +14,10 @@ object ShareManager {
         shareText(context, text, "Export Reply Notifications")
     }
 
+    fun shareStatisticsCsv(context: Context, csv: String) {
+        shareText(context, csv, "Export Statistics")
+    }
+
     private fun shareText(
         context: Context,
         text: String,

@@ -46,6 +46,8 @@ import com.psspl.autoreply.ui.screens.settings.SettingsScreen
 import com.psspl.autoreply.ui.screens.spreadsheet.AddSpreadsheetScreen
 import com.psspl.autoreply.ui.screens.spreadsheet.SpreadsheetScreen
 import com.psspl.autoreply.ui.screens.spreadsheet.ViewSpreadsheetScreen
+import com.psspl.autoreply.ui.screens.statistics.StatisticsDetailScreen
+import com.psspl.autoreply.ui.screens.statistics.StatisticsScreen
 import com.psspl.autoreply.ui.screens.supportedapps.SupportedAppsScreen
 import com.psspl.autoreply.ui.screens.upgrade.UpgradeScreen
 import com.psspl.autoreply.ui.screens.welcomemessage.WelcomeMessageEditScreen
@@ -83,6 +85,7 @@ private const val ROUTE_FOLLOW_UP_MESSAGE = "follow_up_message"
 private const val ROUTE_FOLLOW_UP_HISTORY = "follow_up_history"
 private const val ROUTE_FOLLOW_UP_MANAGE = "follow_up_manage"
 private const val ROUTE_SERVER_REPLY = "server_reply"
+private const val ROUTE_STATISTICS_DETAIL = "statistics_detail"
 private const val ROUTE_SPREADSHEET = "spreadsheet"
 private const val ROUTE_SPREADSHEET_ADD = "spreadsheet_add"
 private const val ROUTE_SPREADSHEET_VIEW = "spreadsheet_view"
@@ -190,6 +193,25 @@ fun AppNavGraph(
             val ruleId = backStackEntry.arguments?.getInt("ruleId") ?: 0
             KeywordReplyFormScreen(
                 ruleId = ruleId,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(BottomNavItem.Statistics.route) {
+            StatisticsScreen(
+                onNavigateToDetail = { replyText ->
+                    navController.navigate("$ROUTE_STATISTICS_DETAIL/${replyText.encodeUrl()}")
+                },
+            )
+        }
+        composable(
+            route = "$ROUTE_STATISTICS_DETAIL/{replyText}",
+            arguments = listOf(
+                navArgument("replyText") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val replyText = backStackEntry.arguments?.getString("replyText")?.decodeUrl() ?: ""
+            StatisticsDetailScreen(
+                replyText = replyText,
                 onBack = { navController.popBackStack() },
             )
         }

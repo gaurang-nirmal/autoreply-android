@@ -14,6 +14,9 @@ class ReplyNotificationsRepository @Inject constructor(
 
     fun countUnread(since: Long): Flow<Int> = dao.countUnread(since)
 
+    fun getByReplyText(replyText: String): Flow<List<ReplyNotificationEntity>> =
+        dao.getByReplyText(replyText)
+
     suspend fun insert(notification: ReplyNotificationEntity) = dao.insert(notification)
 
     suspend fun deleteAll() = dao.deleteAll()
