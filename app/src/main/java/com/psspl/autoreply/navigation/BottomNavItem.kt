@@ -3,6 +3,7 @@ package com.psspl.autoreply.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PhoneAndroid
@@ -33,6 +34,12 @@ sealed class BottomNavItem(
         icon = Icons.Filled.Edit,
     )
 
+    data object Contacts : BottomNavItem(
+        route = "contacts",
+        label = "Contacts",
+        icon = Icons.Filled.Contacts,
+    )
+
     data object Statistics : BottomNavItem(
         route = "statistics",
         label = "Statistics",
@@ -52,6 +59,6 @@ sealed class BottomNavItem(
     )
 
     companion object {
-        val items = listOf(Dashboard, Menu, Statistics, SupportedApps, Settings)
+        val items = listOf(Dashboard, Menu, Contacts, Statistics, Settings)
     }
 }

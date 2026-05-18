@@ -18,6 +18,7 @@ import com.psspl.autoreply.engine.MenuReplyEngine
 import com.psspl.autoreply.engine.ReplyTimingEvaluator
 import com.psspl.autoreply.engine.TimingDecision
 import com.psspl.autoreply.repository.AppSettingsRepository
+import com.psspl.autoreply.repository.ContactsRepository
 import com.psspl.autoreply.repository.KeywordRuleRepository
 import com.psspl.autoreply.repository.ReplyNotificationsRepository
 import com.psspl.autoreply.repository.SpreadsheetRepository
@@ -66,6 +67,9 @@ class MessengerNotificationService : NotificationListenerService() {
 
     @Inject
     lateinit var welcomeMessageRepository: WelcomeMessageRepository
+
+    @Inject
+    lateinit var contactsRepository: ContactsRepository
 
     @Inject
     lateinit var spreadsheetRepository: SpreadsheetRepository
@@ -125,6 +129,18 @@ class MessengerNotificationService : NotificationListenerService() {
             }
 
             val contactKey = "$appPackage:${sender.trim().lowercase()}"
+
+            // 2.5 Contact filter gate — respects "Auto reply to" and group settings
+            val conversationTitle = extras
+                .getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()
+                ?.takeIf { it.isNotBlank() && !it.equals(sender, ignoreCase = true) }
+            if (!contactsRepository.isAllowed(sender, conversationTitle)) {
+                AppLogger.d(
+                    TAG,
+                    "Contact filter blocked reply to '$sender' (group='$conversationTitle') — skipping"
+                )
+                return@launch
+            }
 
             // 3. Welcome message — highest priority, checked before any other reply type
             val welcomeConfig = welcomeMessageRepository.getConfig().first()

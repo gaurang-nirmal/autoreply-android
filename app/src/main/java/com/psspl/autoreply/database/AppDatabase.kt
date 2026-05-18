@@ -3,6 +3,7 @@ package com.psspl.autoreply.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.psspl.autoreply.database.dao.AppSettingsDao
+import com.psspl.autoreply.database.dao.ContactsDao
 import com.psspl.autoreply.database.dao.DefaultMessageDao
 import com.psspl.autoreply.database.dao.DirectMessageDao
 import com.psspl.autoreply.database.dao.FollowUpDao
@@ -16,11 +17,14 @@ import com.psspl.autoreply.database.dao.SpreadsheetDao
 import com.psspl.autoreply.database.dao.SupportedAppDao
 import com.psspl.autoreply.database.dao.WelcomeMessageDao
 import com.psspl.autoreply.database.entity.AppSettingsEntity
+import com.psspl.autoreply.database.entity.ContactConfigEntity
+import com.psspl.autoreply.database.entity.ContactEntity
 import com.psspl.autoreply.database.entity.DefaultMessageEntity
 import com.psspl.autoreply.database.entity.DirectMessageEntity
 import com.psspl.autoreply.database.entity.FollowUpConfigEntity
 import com.psspl.autoreply.database.entity.FollowUpContactEntity
 import com.psspl.autoreply.database.entity.FollowUpHistoryEntity
+import com.psspl.autoreply.database.entity.GroupEntity
 import com.psspl.autoreply.database.entity.KeywordRuleEntity
 import com.psspl.autoreply.database.entity.MenuReplyEntity
 import com.psspl.autoreply.database.entity.MenuReplyItemEntity
@@ -56,8 +60,11 @@ import com.psspl.autoreply.database.entity.WelcomeMessageContactEntity
         DefaultMessageEntity::class,
         SpreadsheetEntity::class,
         SpreadsheetRuleEntity::class,
+        ContactConfigEntity::class,
+        ContactEntity::class,
+        GroupEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -74,4 +81,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun followUpDao(): FollowUpDao
     abstract fun defaultMessageDao(): DefaultMessageDao
     abstract fun spreadsheetDao(): SpreadsheetDao
+    abstract fun contactsDao(): ContactsDao
 }

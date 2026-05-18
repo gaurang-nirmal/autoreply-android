@@ -18,6 +18,8 @@ import com.psspl.autoreply.ui.screens.appsecurity.AppSecurityScreen
 import com.psspl.autoreply.ui.screens.automaticon.AutomaticOnScreen
 import com.psspl.autoreply.ui.screens.autoreplyconfig.AutoReplyConfigScreen
 import com.psspl.autoreply.ui.screens.backuprestore.BackupRestoreScreen
+import com.psspl.autoreply.ui.screens.contacts.ContactsScreen
+import com.psspl.autoreply.ui.screens.contacts.GroupSettingsScreen
 import com.psspl.autoreply.ui.screens.dashboard.DashboardScreen
 import com.psspl.autoreply.ui.screens.directmessage.DirectMessageScreen
 import com.psspl.autoreply.ui.screens.display.DisplayScreen
@@ -89,6 +91,7 @@ private const val ROUTE_STATISTICS_DETAIL = "statistics_detail"
 private const val ROUTE_SPREADSHEET = "spreadsheet"
 private const val ROUTE_SPREADSHEET_ADD = "spreadsheet_add"
 private const val ROUTE_SPREADSHEET_VIEW = "spreadsheet_view"
+private const val ROUTE_GROUP_SETTINGS = "group_settings"
 
 object AppRoutes {
     const val AI_REPLY = "ai_reply/{appId}"
@@ -196,6 +199,20 @@ fun AppNavGraph(
                 onBack = { navController.popBackStack() },
             )
         }
+        // ── Contacts ──────────────────────────────────────────────────────────
+        composable(BottomNavItem.Contacts.route) {
+            ContactsScreen(
+                onNavigateToGroupSettings = {
+                    navController.navigate(ROUTE_GROUP_SETTINGS)
+                },
+            )
+        }
+        composable(ROUTE_GROUP_SETTINGS) {
+            GroupSettingsScreen(
+                onBack = { navController.popBackStack() },
+            )
+        }
+
         composable(BottomNavItem.Statistics.route) {
             StatisticsScreen(
                 onNavigateToDetail = { replyText ->

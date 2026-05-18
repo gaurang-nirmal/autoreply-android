@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.psspl.autoreply.database.AppDatabase
 import com.psspl.autoreply.database.dao.AppSettingsDao
+import com.psspl.autoreply.database.dao.ContactsDao
 import com.psspl.autoreply.database.dao.DefaultMessageDao
 import com.psspl.autoreply.database.dao.DirectMessageDao
 import com.psspl.autoreply.database.dao.FollowUpDao
@@ -73,4 +74,7 @@ object DatabaseModule {
 
     @Provides
     fun provideSpreadsheetDao(db: AppDatabase): SpreadsheetDao = db.spreadsheetDao()
+
+    @Provides
+    fun provideContactsDao(db: AppDatabase): ContactsDao = db.contactsDao()
 }
