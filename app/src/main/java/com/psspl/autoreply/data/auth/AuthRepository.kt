@@ -31,4 +31,10 @@ interface AuthRepository {
      * Returns null if the user is not signed in.
      */
     suspend fun getJwtToken(): String?
+
+    /**
+     * Permanently deletes the user's account on the backend and clears local session.
+     * Returns true on success, false on failure.
+     */
+    suspend fun deleteAccount(): Result<Unit>
 }

@@ -26,7 +26,11 @@ import com.psspl.autoreply.ui.screens.display.DisplayScreen
 import com.psspl.autoreply.ui.screens.followup.FollowUpHistoryScreen
 import com.psspl.autoreply.ui.screens.followup.FollowUpManageScreen
 import com.psspl.autoreply.ui.screens.followup.FollowUpMessageScreen
+import com.psspl.autoreply.ui.screens.help.AppInfoScreen
+import com.psspl.autoreply.ui.screens.help.ContactUsScreen
+import com.psspl.autoreply.ui.screens.help.DeleteAccountScreen
 import com.psspl.autoreply.ui.screens.help.HelpScreen
+import com.psspl.autoreply.ui.screens.help.LicensesScreen
 import com.psspl.autoreply.ui.screens.invitefriend.InviteFriendScreen
 import com.psspl.autoreply.ui.screens.menu.MenuScreen
 import com.psspl.autoreply.ui.screens.menureply.AddEditMenuReplyScreen
@@ -63,6 +67,10 @@ private const val ROUTE_REPLY_NOTIFICATIONS = "reply_notifications"
 private const val ROUTE_DIRECT_MESSAGE = "direct_message"
 private const val ROUTE_NOT_WORKING = "not_working"
 private const val ROUTE_HELP = "help"
+private const val ROUTE_CONTACT_US = "help_contact_us"
+private const val ROUTE_APP_INFO = "help_app_info"
+private const val ROUTE_LICENSES = "help_licenses"
+private const val ROUTE_DELETE_ACCOUNT = "help_delete_account"
 private const val ROUTE_UPGRADE = "upgrade"
 private const val ROUTE_AUTOMATIC_ON = "setting_automatic_on"
 private const val ROUTE_REPLY_TIME = "setting_reply_time"
@@ -265,6 +273,30 @@ fun AppNavGraph(
         composable(ROUTE_HELP) {
             HelpScreen(
                 onBack = { navController.popBackStack() },
+                onNavigateToNotWorking = { navController.navigate(ROUTE_NOT_WORKING) },
+                onNavigateToContactUs = { navController.navigate(ROUTE_CONTACT_US) },
+                onNavigateToAppInfo = { navController.navigate(ROUTE_APP_INFO) },
+                onNavigateToLicenses = { navController.navigate(ROUTE_LICENSES) },
+                onNavigateToDeleteAccount = { navController.navigate(ROUTE_DELETE_ACCOUNT) },
+            )
+        }
+        composable(ROUTE_CONTACT_US) {
+            ContactUsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(ROUTE_APP_INFO) {
+            AppInfoScreen(onBack = { navController.popBackStack() })
+        }
+        composable(ROUTE_LICENSES) {
+            LicensesScreen(onBack = { navController.popBackStack() })
+        }
+        composable(ROUTE_DELETE_ACCOUNT) {
+            DeleteAccountScreen(
+                onBack = { navController.popBackStack() },
+                onAccountDeleted = {
+                    navController.navigate(BottomNavItem.Dashboard.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
         composable(ROUTE_UPGRADE) {

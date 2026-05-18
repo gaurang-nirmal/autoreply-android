@@ -5,7 +5,10 @@ import com.psspl.autoreply.data.network.model.AiProviderMeta
 import com.psspl.autoreply.data.network.model.AiReplyRequest
 import com.psspl.autoreply.data.network.model.AiReplyResponse
 import com.psspl.autoreply.data.network.model.BackendApp
+import com.psspl.autoreply.data.network.model.ContactRequest
+import com.psspl.autoreply.data.network.model.ContactResponse
 import com.psspl.autoreply.data.network.model.CreatePromptRequest
+import com.psspl.autoreply.data.network.model.DeleteAccountResponse
 import com.psspl.autoreply.data.network.model.PromptBackupResponse
 import com.psspl.autoreply.data.network.model.RestorePromptsRequest
 import com.psspl.autoreply.data.network.model.TrainingPromptItem
@@ -93,6 +96,18 @@ interface ApiService {
     suspend fun deleteAllTrainingPrompts(
         @Path("appId") appId: Int,
     ): Response<Unit>
+
+    // ── Support ───────────────────────────────────────────────────────────────
+
+    @POST("support/contact")
+    suspend fun submitContactRequest(
+        @Body request: ContactRequest,
+    ): Response<ContactResponse>
+
+    // ── Account ───────────────────────────────────────────────────────────────
+
+    @DELETE("auth/account")
+    suspend fun deleteAccount(): Response<DeleteAccountResponse>
 
     @GET("ai/training-prompts/{appId}/backup")
     suspend fun backupTrainingPrompts(

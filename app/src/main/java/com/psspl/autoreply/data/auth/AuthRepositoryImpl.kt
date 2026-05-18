@@ -5,6 +5,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.psspl.autoreply.data.auth.model.AuthResult
 import com.psspl.autoreply.data.auth.model.AuthUser
 import com.psspl.autoreply.data.local.SessionManager
+import com.psspl.autoreply.data.network.ApiService
 import com.psspl.autoreply.data.remote.AuthApiService
 import com.psspl.autoreply.data.remote.model.GoogleAuthRequest
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,7 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val googleCredentialProvider: GoogleCredentialProvider,
     private val authApiService: AuthApiService,
+    private val apiService: ApiService,
     private val sessionManager: SessionManager,
 ) : AuthRepository {
 
@@ -108,4 +110,20 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getJwtToken(): String? = sessionManager.getJwtToken()
+
+    override suspend fun deleteAccount(): Result<Unit> {
+        return try {
+            val response = apiService.deleteAccount()
+            if (response.isSuccessful) {
+                sessionManager.clearAuthData()
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Server returned ${response.code()}"))
+            }
+        } catch (e: IOException) {
+            Result.failure(Exception("No internet connection.", e))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
